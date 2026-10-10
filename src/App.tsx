@@ -27,7 +27,11 @@ import Contact from './pages/Contact';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import RewardPolicy from './pages/RewardPolicy';
-import AdminDashboard from './pages/admin/AdminDashboard';
+import { AdminLayout } from './components/AdminLayout';
+import AdminOverview from './pages/admin/AdminOverview';
+import AdminTasks from './pages/admin/AdminTasks';
+import AdminFunding from './pages/admin/AdminFunding';
+import AdminSection from './pages/admin/AdminSection';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -71,7 +75,12 @@ function App() {
         </Route>
 
         {/* Admin */}
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminOverview />} />
+          <Route path="tasks" element={<AdminTasks />} />
+          <Route path="funding" element={<AdminFunding />} />
+          <Route path=":section" element={<AdminSection />} />
+        </Route>
 
         <Route path="*" element={<NotFound />} />
       </Routes>
