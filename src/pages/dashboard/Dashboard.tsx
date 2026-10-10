@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { mockUser, mockTasks } from '../../lib/mockData';
-import { CONFIG, formatTokens, tokensToNaira } from '../../lib/config';
+import { formatTokens, tokensToNaira } from '../../lib/config';
 import { ArrowRight, Gamepad2 } from 'lucide-react';
 
 export default function Dashboard() {

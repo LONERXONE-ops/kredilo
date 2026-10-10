@@ -1,6 +1,6 @@
 import { mockUser, mockTransactions } from '../../lib/mockData';
 import { CONFIG, formatTokens, tokensToNaira, formatNaira } from '../../lib/config';
-import { ArrowUpRight, History, Wallet as WalletIcon } from 'lucide-react';
+import { ArrowUpRight, History } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Wallet() {

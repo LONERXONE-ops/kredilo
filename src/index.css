@@ -7,6 +7,8 @@
   --color-muted: #a1a1aa;
   --radius-card: 1.25rem;
   --radius-button: 9999px;
+  --font-display: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Nunito', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 * {
@@ -19,7 +21,7 @@ html, body, #root {
   min-height: 100%;
   background: #050505;
   color: #ffffff;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -30,11 +32,25 @@ body {
     #050505;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* Must live in a layer: unlayered rules beat Tailwind utilities and made
+   text-black on white buttons invisible (white-on-white). */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  button, input, select, textarea {
+    font-family: inherit;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
 }
 
-button, input, select, textarea {
-  font-family: inherit;
+/* Light beam from the concept art (top-right diagonal sweep) */
+.light-beam {
+  background: linear-gradient(215deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.04) 30%, transparent 55%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
 }

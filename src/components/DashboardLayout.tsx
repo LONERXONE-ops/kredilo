@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Home, ListChecks, Gamepad2, Bell, Wallet, User, Settings, HelpCircle, LogOut } from 'lucide-react';
+import { Home, ListChecks, Gamepad2, Bell, Wallet, User, LogOut } from 'lucide-react';
 import { Logo } from './Logo';
 import { mockUser } from '../lib/mockData';
 

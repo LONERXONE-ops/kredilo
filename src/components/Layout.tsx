@@ -103,7 +103,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-white/[0.06] py-6 text-center text-xs text-white/40">
-        © 2025 Kredilo. All rights reserved. · Nigeria
+        © {new Date().getFullYear()} Kredilo. All rights reserved. · Nigeria
       </div>
     </footer>
   );

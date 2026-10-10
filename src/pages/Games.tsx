@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Gamepad2 } from 'lucide-react';
 
 const games = [
   { name: 'Snake', desc: 'Guide the snake, eat food and grow your score.', reward: 'Up to 50 Tokens' },
