@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { DashboardLayout } from './components/DashboardLayout';
 import Home from './pages/Home';
@@ -13,9 +13,7 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 import AccountRecovery from './pages/auth/AccountRecovery';
 import RegistrationSuccess from './pages/auth/RegistrationSuccess';
 import Dashboard from './pages/dashboard/Dashboard';
-import DashboardTasks from './pages/dashboard/Tasks';
 import Wallet from './pages/dashboard/Wallet';
-import MyTasks from './pages/dashboard/MyTasks';
 import Profile from './pages/dashboard/Profile';
 import Notifications from './pages/dashboard/Notifications';
 import TaskDetails from './pages/dashboard/TaskDetails';
@@ -57,9 +55,9 @@ function App() {
         {/* User Dashboard */}
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/tasks" element={<DashboardTasks />} />
+          <Route path="/dashboard/tasks" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard/tasks/:id" element={<TaskDetails />} />
-          <Route path="/dashboard/my-tasks" element={<MyTasks />} />
+          <Route path="/dashboard/my-tasks" element={<Navigate to="/dashboard?tab=mine" replace />} />
           <Route path="/dashboard/wallet" element={<Wallet />} />
           <Route path="/dashboard/notifications" element={<Notifications />} />
           <Route path="/dashboard/profile" element={<Profile />} />

@@ -12,7 +12,7 @@ export default function TaskDetails() {
 
   return (
     <div className="max-w-3xl">
-      <Link to="/dashboard/tasks" className="inline-flex items-center gap-2 text-sm text-white/60 mb-6 hover:text-white">
+      <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-white/60 mb-6 hover:text-white">
         <ArrowLeft size={16} /> Back to tasks
       </Link>
       <div className="border border-white/10 rounded-3xl p-8 bg-[#111]">

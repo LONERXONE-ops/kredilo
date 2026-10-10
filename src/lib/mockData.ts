@@ -55,6 +55,6 @@ export const mockTransactions: Transaction[] = [
   { id: 't1', date: 'Sep 13, 2026 14:32', type: 'Task Reward', description: 'Completed a short survey', amount: 200, status: 'Completed' },
   { id: 't2', date: 'Sep 13, 2026 12:17', type: 'Game Reward', description: 'Played Snake Game', amount: 100, status: 'Completed' },
   { id: 't3', date: 'Sep 12, 2026 18:45', type: 'Task Reward', description: 'Follow us on X (Twitter)', amount: 150, status: 'Completed' },
-  { id: 't4', date: 'Sep 12, 2026 16:20', type: 'Withdrawal', description: 'Requested payout (USDT)', amount: -1000, status: 'Processing' },
+  { id: 't4', date: 'Sep 12, 2026 16:20', type: 'Withdrawal', description: 'Withdrawal request (demo)', amount: -1000, status: 'Processing' },
   { id: 't5', date: 'Sep 11, 2026 11:03', type: 'Task Reward', description: 'Completed a short survey', amount: 300, status: 'Completed' },
 ];

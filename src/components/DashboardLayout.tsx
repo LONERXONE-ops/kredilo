@@ -1,72 +1,42 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Home, ListChecks, Gamepad2, Bell, Wallet, User, LogOut } from 'lucide-react';
+import { Link, Outlet } from 'react-router-dom';
+import { Bell } from 'lucide-react';
 import { Logo } from './Logo';
+import { BottomDock } from './BottomDock';
 import { mockUser } from '../lib/mockData';
 
-const sidebar = [
-  { to: '/dashboard', icon: Home, label: 'Dashboard' },
-  { to: '/dashboard/tasks', icon: ListChecks, label: 'Explore Tasks' },
-  { to: '/dashboard/games', icon: Gamepad2, label: 'Games' },
-  { to: '/dashboard/my-tasks', icon: ListChecks, label: 'My Tasks' },
-  { to: '/dashboard/notifications', icon: Bell, label: 'Notifications' },
-  { to: '/dashboard/wallet', icon: Wallet, label: 'Wallet' },
-  { to: '/dashboard/profile', icon: User, label: 'Profile & Settings' },
-];
-
 export function DashboardLayout() {
-  const location = useLocation();
-
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex">
-      {/* Sidebar */}
-      <aside className="hidden lg:flex w-64 flex-col border-r border-white/5 bg-[#0a0a0a] p-4">
-        <div className="mb-8 px-2"><Logo className="h-6 w-auto text-white" /></div>
-        <nav className="flex-1 space-y-1">
-          {sidebar.map((item) => {
-            const active = location.pathname === item.to;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${
-                  active ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <item.icon size={18} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="pt-4 border-t border-white/5">
-          <Link to="/" className="flex items-center gap-3 px-3 py-2 text-sm text-white/60 hover:text-white">
-            <LogOut size={18} /> Log out
-          </Link>
-        </div>
-      </aside>
+    <div className="relative min-h-screen bg-[#050505] text-white">
+      <div className="light-beam pointer-events-none absolute inset-x-0 top-0 h-[28rem] opacity-60" />
 
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-white/5 flex items-center justify-between px-4 lg:px-8">
-          <div className="lg:hidden"><Logo /></div>
-          <div className="flex items-center gap-4 ml-auto">
-            <Link to="/dashboard/notifications" className="relative p-2 hover:bg-white/5 rounded-lg">
+      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#050505]/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/dashboard" aria-label="Kredilo dashboard">
+            <Logo className="h-6 w-auto text-white" />
+          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/dashboard/notifications" aria-label="Notifications" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10">
               <Bell size={20} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             </Link>
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs">{mockUser.name[0]}</div>
-              <div className="hidden sm:block">
-                <div className="font-medium">{mockUser.name}</div>
-                <div className="text-xs text-white/40">ID: {mockUser.id}</div>
-              </div>
-            </div>
+            <Link to="/dashboard/profile" className="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-2 hover:bg-white/10">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm font-extrabold">{mockUser.name[0]}</span>
+              <span className="hidden text-left leading-tight sm:block">
+                <span className="block text-sm font-bold">{mockUser.name}</span>
+                <span className="block text-[11px] text-white/40">ID: {mockUser.id}</span>
+              </span>
+            </Link>
           </div>
-        </header>
-        <main className="flex-1 p-4 lg:p-8 overflow-auto">
-          <Outlet />
-        </main>
-      </div>
+        </div>
+        <div className="border-t border-white/[0.06] bg-white/[0.04] px-4 py-1.5 text-center text-[11px] font-semibold text-white/60">
+          Demo mode: sample data only. No real earnings or payments.
+        </div>
+      </header>
+
+      <main className="relative mx-auto w-full max-w-6xl px-4 pb-36 pt-6 sm:px-6 lg:px-8">
+        <Outlet />
+      </main>
+
+      <BottomDock />
     </div>
   );
 }
