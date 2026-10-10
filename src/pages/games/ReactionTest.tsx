@@ -1,44 +1,58 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { GameShell } from '../../components/GameShell';
+
+type State = 'idle' | 'waiting' | 'ready' | 'result' | 'early';
 
 export default function ReactionTest() {
-  const [state, setState] = useState<'waiting' | 'ready' | 'clicked' | 'tooSoon'>('waiting');
+  const [state, setState] = useState<State>('idle');
   const [time, setTime] = useState(0);
-  const [start, setStart] = useState(0);
+  const [best, setBest] = useState<number | null>(null);
+  const timer = useRef<number | undefined>(undefined);
+  const startAt = useRef(0);
+
+  useEffect(() => () => window.clearTimeout(timer.current), []);
 
   const begin = () => {
     setState('waiting');
-    const delay = 1000 + Math.random() * 3000;
-    setTimeout(() => {
+    timer.current = window.setTimeout(() => {
+      startAt.current = Date.now();
       setState('ready');
-      setStart(Date.now());
-    }, delay);
+    }, 1000 + Math.random() * 3000);
   };
 
-  const click = () => {
-    if (state === 'ready') {
-      setTime(Date.now() - start);
-      setState('clicked');
-    } else if (state === 'waiting') {
-      setState('tooSoon');
+  const press = () => {
+    if (state === 'waiting') {
+      window.clearTimeout(timer.current);
+      setState('early');
+    } else if (state === 'ready') {
+      const t = Date.now() - startAt.current;
+      setTime(t);
+      setBest((b) => (b === null || t < b ? t : b));
+      setState('result');
+    } else {
+      begin();
     }
   };
 
+  const label: Record<State, string> = {
+    idle: 'Tap to start',
+    waiting: 'Wait for it...',
+    ready: 'TAP NOW!',
+    result: `${time} ms. Tap to try again`,
+    early: 'Too soon! Tap to try again',
+  };
+
   return (
-    <div className="max-w-md mx-auto text-center">
-      <Link to="/dashboard/games" className="text-sm text-white/60 hover:text-white mb-6 inline-block">← Back to Games</Link>
-      <h1 className="text-3xl font-bold mb-2">Reaction Test</h1>
-      <p className="text-sm text-white/60 mb-6">Click when the box turns green.</p>
-      <div onClick={click} className={`h-64 border border-white/10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
-        state === 'ready' ? 'bg-emerald-500' : state === 'clicked' ? 'bg-white/10' : 'bg-[#111]'
-      }`}>
-        {state === 'waiting' && <span>Wait for green...</span>}
-        {state === 'ready' && <span className="text-2xl font-bold">CLICK!</span>}
-        {state === 'clicked' && <span className="text-2xl">{time} ms</span>}
-        {state === 'tooSoon' && <span>Too soon! Try again.</span>}
-      </div>
-      <button onClick={begin} className="mt-6 bg-white text-black px-6 py-3 rounded-full font-semibold">Start</button>
-      {time > 0 && time < 300 && <div className="mt-4 text-emerald-400 text-sm">Great reaction! Eligible for reward (demo).</div>}
-    </div>
+    <GameShell title="Reaction Test" goal="Wait for the screen to turn white, then tap as fast as you can.">
+      <button
+        onClick={press}
+        className={`flex h-64 w-full items-center justify-center rounded-3xl border px-6 text-center text-2xl font-extrabold transition ${
+          state === 'ready' ? 'border-white bg-white text-black' : 'border-white/15 bg-white/[0.04]'
+        }`}
+      >
+        {label[state]}
+      </button>
+      <p className="mt-4 text-center text-sm font-bold">{best === null ? 'No best time yet' : `Best: ${best} ms`}</p>
+    </GameShell>
   );
 }

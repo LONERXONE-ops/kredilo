@@ -1,50 +1,79 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Cloud, Heart, Moon, Star, Sun, Zap } from 'lucide-react';
+import { GameShell } from '../../components/GameShell';
 
-const pairs = ['🍎', '🍌', '🍇', '🍉', '🍎', '🍌', '🍇', '🍉'];
+const icons = [Star, Heart, Moon, Sun, Cloud, Zap];
+
+function shuffled(): number[] {
+  const deck = [...Array.from({ length: icons.length }, (_, i) => i), ...Array.from({ length: icons.length }, (_, i) => i)];
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
 
 export default function MemoryMatch() {
-  const [cards, setCards] = useState(pairs.map((p, i) => ({ id: i, emoji: p, flipped: false, matched: false })));
-  const [flipped, setFlipped] = useState<number[]>([]);
+  const [deck, setDeck] = useState<number[]>(shuffled);
+  const [open, setOpen] = useState<number[]>([]);
+  const [matched, setMatched] = useState<number[]>([]);
+  const [moves, setMoves] = useState(0);
 
-  const flip = (id: number) => {
-    if (flipped.length >= 2 || cards[id].matched || cards[id].flipped) return;
-    const newCards = [...cards];
-    newCards[id].flipped = true;
-    setCards(newCards);
-    setFlipped([...flipped, id]);
-
-    if (flipped.length === 1) {
-      const first = cards[flipped[0]];
-      if (first.emoji === newCards[id].emoji) {
+  const flip = (i: number) => {
+    if (open.length === 2 || open.includes(i) || matched.includes(i)) return;
+    const next = [...open, i];
+    setOpen(next);
+    if (next.length === 2) {
+      setMoves((m) => m + 1);
+      const [a, b] = next;
+      if (deck[a] === deck[b]) {
         setTimeout(() => {
-          setCards(c => c.map(card => card.emoji === first.emoji ? { ...card, matched: true } : card));
-          setFlipped([]);
-        }, 500);
+          setMatched((m) => [...m, a, b]);
+          setOpen([]);
+        }, 400);
       } else {
-        setTimeout(() => {
-          setCards(c => c.map((card, i) => i === id || i === flipped[0] ? { ...card, flipped: false } : card));
-          setFlipped([]);
-        }, 800);
+        setTimeout(() => setOpen([]), 800);
       }
     }
   };
 
-  const matchedCount = cards.filter(c => c.matched).length / 2;
+  const restart = () => {
+    setDeck(shuffled());
+    setOpen([]);
+    setMatched([]);
+    setMoves(0);
+  };
+
+  const won = matched.length === deck.length;
 
   return (
-    <div className="max-w-md mx-auto text-center">
-      <Link to="/dashboard/games" className="text-sm text-white/60 hover:text-white mb-6 inline-block">← Back to Games</Link>
-      <h1 className="text-3xl font-bold mb-2">Memory Match</h1>
-      <p className="text-sm text-white/60 mb-6">Find all pairs. Matched: {matchedCount}/4</p>
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {cards.map(card => (
-          <button key={card.id} onClick={() => flip(card.id)} className="aspect-square border border-white/10 rounded-xl bg-[#111] text-3xl flex items-center justify-center">
-            {card.flipped || card.matched ? card.emoji : '?'}
-          </button>
-        ))}
+    <GameShell title="Memory Match" goal="Flip two cards at a time and find all the matching pairs.">
+      <div className="mb-3 flex items-center justify-between text-sm font-bold">
+        <span>Pairs: {matched.length / 2}/{icons.length}</span>
+        <span className="text-white/50">Moves: {moves}</span>
       </div>
-      {matchedCount === 4 && <div className="text-emerald-400">All pairs found! Eligible for reward (demo).</div>}
-    </div>
+      <div className="grid grid-cols-4 gap-2.5">
+        {deck.map((v, i) => {
+          const shown = open.includes(i) || matched.includes(i);
+          const Icon = icons[v];
+          return (
+            <button
+              key={i}
+              onClick={() => flip(i)}
+              aria-label={shown ? 'Card' : 'Hidden card'}
+              className={`flex aspect-square items-center justify-center rounded-2xl border transition ${
+                matched.includes(i) ? 'border-white/10 bg-white/10 text-white/50' : shown ? 'border-white bg-white text-black' : 'border-white/15 bg-white/[0.05]'
+              }`}
+            >
+              {shown && <Icon size={28} />}
+            </button>
+          );
+        })}
+      </div>
+      {won && <p className="mt-5 text-center font-bold">All pairs found in {moves} moves!</p>}
+      <button onClick={restart} className="mt-5 min-h-12 w-full rounded-full border border-white/25 text-sm font-bold hover:bg-white/5">
+        {won ? 'Play Again' : 'Restart'}
+      </button>
+    </GameShell>
   );
 }
