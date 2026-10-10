@@ -3,7 +3,7 @@ import { ArrowRight, Clock, Coins, Gamepad2, LayoutGrid, MessageCircle, Pencil, 
 import type { LucideIcon } from 'lucide-react';
 import type { Task, TaskCategory } from '../lib/mockData';
 
-const categoryIcon: Record<TaskCategory, LucideIcon> = {
+export const categoryIcon: Record<TaskCategory, LucideIcon> = {
   'Social Media': MessageCircle,
   Surveys: ClipboardList,
   'Apps & Sign Ups': Smartphone,

@@ -1,39 +1,51 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Mail } from 'lucide-react';
+import { AuthShell } from '../../components/AuthShell';
+import { AuthField } from '../../components/AuthField';
+
+const stepIcon = (n: string) => ({ icon: () => <span className="text-xl font-extrabold">{n}</span> });
 
 export default function AccountRecovery() {
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-16 grid lg:grid-cols-2 gap-8">
-      <div className="border border-white/10 rounded-3xl p-8 bg-[#111]">
-        <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-xs mb-4">Account Recovery</div>
-        <h1 className="text-3xl font-bold mb-2">Recover Your Account</h1>
-        <p className="text-white/60 text-sm mb-8">Enter your email address and we’ll help you get back into your Kredilo account.</p>
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('Demo: Recovery link would be sent.'); }}>
-          <div>
-            <label className="text-sm mb-1 block">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={16} />
-              <input type="email" required placeholder="Enter your email address" className="w-full bg-black/50 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm" />
-            </div>
-          </div>
-          <button type="submit" className="w-full bg-white text-black py-3 rounded-full font-semibold">Send Recovery Link →</button>
-          <div className="text-center text-sm text-white/40">or</div>
-          <Link to="/login" className="w-full flex items-center justify-center gap-2 border border-white/20 py-3 rounded-full text-sm">
-            <ArrowLeft size={16} /> Back to Log In
-          </Link>
-          <p className="text-center text-sm text-white/60">Remember your account? <Link to="/login" className="text-white hover:underline">Log In</Link></p>
-        </form>
-      </div>
-      <div className="hidden lg:flex border border-white/10 rounded-3xl p-8 bg-[#111] flex-col justify-center">
-        <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center mb-6 text-3xl">👤</div>
-        <h2 className="text-2xl font-bold mb-2">Get Back Into Your Account</h2>
-        <p className="text-white/60 text-sm mb-8">If you’re unable to log in, follow these steps to recover your account.</p>
-        <ol className="space-y-4 text-sm">
-          <li className="flex gap-3"><span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-xs">1</span> Enter your email address</li>
-          <li className="flex gap-3"><span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-xs">2</span> Check your inbox</li>
-          <li className="flex gap-3"><span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-xs">3</span> Follow the link</li>
-        </ol>
-      </div>
-    </div>
+    <AuthShell
+      badge="Account Recovery"
+      title="Recover Your Account"
+      subtitle="Enter your email address and we’ll help you get back into your Kredilo account."
+      panel={{
+        title: 'Get Back Into Your Account',
+        text: 'If you’re unable to log in, follow these steps to recover your account.',
+        items: [
+          { ...stepIcon('1'), title: 'Enter your email address', text: 'Use the email linked to your Kredilo account.' },
+          { ...stepIcon('2'), title: 'Check your inbox', text: 'We’ll send you a recovery link to reset your access.' },
+          { ...stepIcon('3'), title: 'Follow the link', text: 'Click the link and follow the instructions to regain access.' },
+        ],
+      }}
+    >
+      <form
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setSent(true);
+        }}
+      >
+        <AuthField label="Email Address" icon={Mail} type="email" placeholder="Enter your email address" value={email} onChange={setEmail} autoComplete="email" />
+        <button type="submit" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90">
+          Send Recovery Link <ArrowRight size={18} />
+        </button>
+        {sent && (
+          <p role="status" className="rounded-2xl border border-white/15 bg-white/[0.05] px-4 py-3 text-sm text-white/80">
+            Demo mode: no email was sent. Recovery will work once the backend and email delivery are connected.
+          </p>
+        )}
+        <div className="flex items-center gap-3 text-xs text-white/40"><span className="h-px flex-1 bg-white/15" />or<span className="h-px flex-1 bg-white/15" /></div>
+        <Link to="/login" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/20 text-sm font-semibold hover:bg-white/5">
+          <ArrowLeft size={18} /> Back to Log In
+        </Link>
+      </form>
+    </AuthShell>
   );
 }

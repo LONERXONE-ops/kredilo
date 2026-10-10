@@ -1,53 +1,56 @@
-import { Link } from 'react-router-dom';
-import { Mail, Lock } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Coins, Gamepad2, Lock, Mail, WalletCards, Zap } from 'lucide-react';
+import { AuthShell } from '../../components/AuthShell';
+import { AuthField } from '../../components/AuthField';
 
 export default function Signup() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState('');
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-16 grid lg:grid-cols-2 gap-8">
-      <div className="border border-white/10 rounded-3xl p-8 bg-[#111]">
-        <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-xs mb-4">Create Account</div>
-        <h1 className="text-3xl font-bold mb-2">Sign Up</h1>
-        <p className="text-white/60 text-sm mb-8">Join Kredilo today and start completing tasks, playing games, and earning tokens.</p>
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.location.href = '/welcome'; }}>
-          <div>
-            <label className="text-sm mb-1 block">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={16} />
-              <input type="email" required placeholder="Enter your email address" className="w-full bg-black/50 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm" />
-            </div>
-          </div>
-          <div>
-            <label className="text-sm mb-1 block">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={16} />
-              <input type="password" required minLength={8} placeholder="Create a password" className="w-full bg-black/50 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm" />
-            </div>
-            <p className="text-xs text-white/40 mt-1">Password must be at least 8 characters long.</p>
-          </div>
-          <div>
-            <label className="text-sm mb-1 block">Confirm Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={16} />
-              <input type="password" required placeholder="Confirm your password" className="w-full bg-black/50 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm" />
-            </div>
-          </div>
-          <button type="submit" className="w-full bg-white text-black py-3 rounded-full font-semibold">Create Account →</button>
-          <div className="text-center text-sm text-white/40">or</div>
-          <button type="button" className="w-full border border-white/20 py-3 rounded-full text-sm">Continue with Google</button>
-          <p className="text-center text-sm text-white/60">Already have an account? <Link to="/login" className="text-white hover:underline">Log In</Link></p>
-        </form>
-      </div>
-      <div className="hidden lg:flex border border-white/10 rounded-3xl p-8 bg-[#111] flex-col justify-center">
-        <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center mb-6 text-3xl">👤+</div>
-        <h2 className="text-2xl font-bold mb-2">Start Your Kredilo Journey</h2>
-        <p className="text-white/60 text-sm mb-8">Create your account in minutes and get access to tasks, games, rewards and more.</p>
-        <ul className="space-y-4 text-sm">
-          <li className="flex gap-3"><span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">⚡</span> Complete simple tasks</li>
-          <li className="flex gap-3"><span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">🎮</span> Play fun games</li>
-          <li className="flex gap-3"><span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">🪙</span> Earn tokens</li>
-          <li className="flex gap-3"><span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">→</span> Request withdrawals</li>
-        </ul>
-      </div>
-    </div>
+    <AuthShell
+      badge="Create Account"
+      title="Sign Up"
+      subtitle="Join Kredilo and start completing tasks, playing games, and earning tokens."
+      panel={{
+        title: 'Start Your Kredilo Journey',
+        text: 'Create your account in minutes and get access to tasks, games and rewards.',
+        items: [
+          { icon: Zap, title: 'Complete simple tasks', text: 'Follow clear instructions and get rewarded.' },
+          { icon: Gamepad2, title: 'Play fun games', text: 'Enjoy browser games and daily challenges.' },
+          { icon: Coins, title: 'Earn tokens', text: 'Collect tokens for approved activities.' },
+          { icon: WalletCards, title: 'Track your wallet', text: 'Withdrawals open once secure payments are ready.' },
+        ],
+      }}
+    >
+      <form
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (password.length < 8) return setError('Password must be at least 8 characters long.');
+          if (password !== confirm) return setError('Passwords do not match.');
+          setError('');
+          navigate('/welcome');
+        }}
+      >
+        <AuthField label="Email Address" icon={Mail} type="email" placeholder="Enter your email address" value={email} onChange={setEmail} autoComplete="email" />
+        <AuthField label="Password" icon={Lock} type="password" placeholder="Create a password" value={password} onChange={setPassword} hint="Password must be at least 8 characters long." autoComplete="new-password" />
+        <AuthField label="Confirm Password" icon={Lock} type="password" placeholder="Confirm your password" value={confirm} onChange={setConfirm} autoComplete="new-password" />
+        {error && <p role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+        <button type="submit" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90">
+          Create Account <ArrowRight size={18} />
+        </button>
+        <p className="text-center text-xs text-white/40">Demo mode: no account is created and nothing is saved.</p>
+        <div className="flex items-center gap-3 text-xs text-white/40"><span className="h-px flex-1 bg-white/15" />or<span className="h-px flex-1 bg-white/15" /></div>
+        <button type="button" disabled className="min-h-12 w-full cursor-not-allowed rounded-full border border-white/15 text-sm font-semibold text-white/40">
+          Continue with Google (coming soon)
+        </button>
+        <p className="text-center text-sm text-white/60">Already have an account? <Link to="/login" className="font-bold text-white underline underline-offset-4">Log In</Link></p>
+      </form>
+    </AuthShell>
   );
 }

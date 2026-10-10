@@ -1,38 +1,81 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight, Clock, Coins, Search } from 'lucide-react';
 import { mockTasks } from '../lib/mockData';
-import { Clock, Coins } from 'lucide-react';
+import { categoryIcon } from '../components/TaskCard';
 
 export default function FeaturedTasks() {
+  const [params] = useSearchParams();
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState(params.get('category') ?? 'All');
+  const categories = ['All', ...Array.from(new Set(mockTasks.map((t) => t.category)))];
+
+  const list = mockTasks.filter(
+    (t) => (category === 'All' || t.category === category) && t.title.toLowerCase().includes(search.toLowerCase()),
+  );
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-        <div>
-          <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-xs mb-3">Task Marketplace</div>
-          <h1 className="text-4xl font-bold">Featured Tasks</h1>
-          <p className="mt-2 text-white/60 max-w-xl">Complete simple tasks, earn tokens, and move closer to your withdrawal goal.</p>
-        </div>
-        <div className="flex gap-2">
-          <input placeholder="Search tasks..." className="bg-[#111] border border-white/10 rounded-full px-4 py-2 text-sm w-48" />
-        </div>
-      </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockTasks.map((task) => (
-          <div key={task.id} className="p-5 border border-white/10 rounded-2xl bg-[#111] hover:border-white/20 transition flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs px-2 py-1 rounded-full bg-white/10">{task.category}</span>
-              <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">Available</span>
-            </div>
-            <h3 className="font-semibold mb-2">{task.title}</h3>
-            <div className="flex items-center gap-4 text-sm text-white/60 mb-3">
-              <span className="flex items-center gap-1"><Coins size={14} /> {task.reward} Tokens</span>
-              <span className="flex items-center gap-1"><Clock size={14} /> {task.timeMinutes} mins</span>
-            </div>
-            <p className="text-sm text-white/50 flex-1 mb-4">{task.description}</p>
-            <Link to={`/dashboard/tasks/${task.id}`} className="mt-auto text-center py-2 border border-white/20 rounded-full text-sm hover:bg-white/5">
-              View Task →
-            </Link>
+    <div className="relative overflow-hidden">
+      <div className="light-beam pointer-events-none absolute inset-y-0 right-0 w-full lg:w-[60%]" />
+      <div className="relative mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <div className="grid items-end gap-6 lg:grid-cols-2">
+          <div>
+            <span className="inline-block rounded-full border border-white/25 px-4 py-1.5 text-sm font-bold">Task Marketplace</span>
+            <h1 className="mt-4 text-[2.6rem] font-extrabold leading-[1.05] sm:text-6xl">Featured Tasks</h1>
+            <p className="mt-4 max-w-md text-lg text-white/60">
+              Complete simple tasks and earn tokens. These are demo tasks; no sponsored tasks exist yet.
+            </p>
           </div>
-        ))}
+          <div className="space-y-3">
+            <div className="relative">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/45" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search tasks..."
+                className="h-14 w-full rounded-full border border-white/20 bg-black/40 pl-12 pr-4 text-sm outline-none placeholder:text-white/35 focus:border-white/50"
+              />
+            </div>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              aria-label="Category"
+              className="h-11 rounded-full border border-white/20 bg-black/40 px-4 text-sm font-semibold outline-none"
+            >
+              {categories.map((c) => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {list.map((t) => {
+            const Icon = categoryIcon[t.category];
+            return (
+              <div key={t.id} className="flex flex-col rounded-[1.75rem] border border-white/15 bg-white/[0.02] p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10"><Icon size={26} strokeWidth={1.7} /></span>
+                  <div className="min-w-0 flex-1">
+                    <span className="rounded-full border border-white/20 px-2.5 py-0.5 text-[11px] font-bold">{t.category}</span>
+                    <h2 className="mt-1.5 text-lg font-extrabold leading-snug">{t.title}</h2>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center gap-5 text-sm font-bold">
+                  <span className="flex items-center gap-1.5"><Coins size={17} /> {t.reward} tokens</span>
+                  <span className="flex items-center gap-1.5 text-white/70"><Clock size={16} /> {t.timeMinutes} mins</span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {t.requirements.slice(0, 2).map((r) => <span key={r} className="rounded-full border border-white/15 px-3 py-1 text-xs">{r}</span>)}
+                  {t.requirements.length > 2 && <span className="rounded-full border border-white/15 px-3 py-1 text-xs">+{t.requirements.length - 2} more</span>}
+                </div>
+                <p className="mt-3 flex-1 text-sm leading-relaxed text-white/55">{t.description}</p>
+                <Link to={`/dashboard/tasks/${t.id}`} className="mt-4 inline-flex min-h-11 items-center gap-2 self-end rounded-full border border-white/25 px-5 text-sm font-bold hover:bg-white/5">
+                  View Task <ArrowRight size={16} />
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+        {list.length === 0 && <p className="mt-8 rounded-3xl border border-white/10 p-10 text-center text-white/45">No tasks match your search.</p>}
       </div>
     </div>
   );
