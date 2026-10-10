@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Home, ListChecks, Gamepad2, Bell, Wallet, User, Settings, HelpCircle, LogOut } from 'lucide-react';
-import { Logo } from './Layout';
+import { Logo } from './Logo';
 import { mockUser } from '../lib/mockData';
 
 const sidebar = [
@@ -20,7 +20,7 @@ export function DashboardLayout() {
     <div className="min-h-screen bg-[#050505] text-white flex">
       {/* Sidebar */}
       <aside className="hidden lg:flex w-64 flex-col border-r border-white/5 bg-[#0a0a0a] p-4">
-        <div className="mb-8 px-2"><Logo /></div>
+        <div className="mb-8 px-2"><Logo className="h-6 w-auto text-white" /></div>
         <nav className="flex-1 space-y-1">
           {sidebar.map((item) => {
             const active = location.pathname === item.to;
