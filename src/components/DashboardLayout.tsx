@@ -1,10 +1,22 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { Logo } from './Logo';
 import { BottomDock } from './BottomDock';
-import { mockUser } from '../lib/mockData';
+import { useAuth } from '../lib/auth';
 
 export function DashboardLayout() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center bg-[#050505] text-sm text-white/50">Loading...</div>;
+  }
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
+  const name = user.email.split('@')[0];
+
   return (
     <div className="relative min-h-screen bg-[#050505] text-white">
       <div className="light-beam pointer-events-none absolute inset-x-0 top-0 h-[28rem] opacity-60" />
@@ -19,16 +31,16 @@ export function DashboardLayout() {
               <Bell size={20} />
             </Link>
             <Link to="/dashboard/profile" className="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-2 hover:bg-white/10">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm font-extrabold">{mockUser.name[0]}</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm font-extrabold">{name[0]?.toUpperCase()}</span>
               <span className="hidden text-left leading-tight sm:block">
-                <span className="block text-sm font-bold">{mockUser.name}</span>
-                <span className="block text-[11px] text-white/40">ID: {mockUser.id}</span>
+                <span className="block text-sm font-bold">{name}</span>
+                <span className="block text-[11px] text-white/40">ID: {user.id.slice(0, 8)}</span>
               </span>
             </Link>
           </div>
         </div>
         <div className="border-t border-white/[0.06] bg-white/[0.04] px-4 py-1.5 text-center text-[11px] font-semibold text-white/60">
-          Demo mode: sample data only. No real earnings or payments.
+          Demo mode: balances and tasks are sample data. No real earnings or payments.
         </div>
       </header>
 

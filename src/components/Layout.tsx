@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { Logo } from './Logo';
+import { useAuth } from '../lib/auth';
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -35,12 +36,7 @@ export function Layout() {
               </Link>
             ))}
           </nav>
-          <div className="hidden md:flex items-center gap-3">
-            <Link to="/login" className="text-sm font-medium text-white/80 hover:text-white">Log In</Link>
-            <Link to="/signup" className="bg-white text-black px-5 py-2 rounded-full text-sm font-semibold hover:bg-white/90 transition">
-              Sign Up
-            </Link>
-          </div>
+          <div className="hidden md:block"><HeaderAuth /></div>
           <button className="md:hidden p-2 -mr-2" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Menu">
             {mobileOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -52,10 +48,7 @@ export function Layout() {
                 {l.label}
               </Link>
             ))}
-            <div className="pt-4 flex flex-col gap-3">
-              <Link to="/login" onClick={() => setMobileOpen(false)} className="py-3 text-center text-base font-medium">Log In</Link>
-              <Link to="/signup" onClick={() => setMobileOpen(false)} className="bg-white text-black py-3 rounded-full text-center text-base font-semibold">Sign Up</Link>
-            </div>
+            <HeaderAuth mobile onNavigate={() => setMobileOpen(false)} />
           </div>
         )}
       </header>
@@ -107,5 +100,26 @@ export function Footer() {
         © {new Date().getFullYear()} Kredilo. All rights reserved. · Nigeria
       </div>
     </footer>
+  );
+}
+function HeaderAuth({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?: () => void }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  const wrap = mobile ? 'pt-4 flex flex-col gap-3' : 'flex items-center gap-3';
+  const primary = mobile
+    ? 'bg-white text-black py-3 rounded-full text-center text-base font-semibold'
+    : 'bg-white text-black px-5 py-2 rounded-full text-sm font-semibold hover:bg-white/90 transition';
+  const plain = mobile ? 'py-3 text-center text-base font-medium' : 'text-sm font-medium text-white/80 hover:text-white';
+  return (
+    <div className={wrap}>
+      {user ? (
+        <Link to="/dashboard" onClick={onNavigate} className={primary}>Dashboard</Link>
+      ) : (
+        <>
+          <Link to="/login" onClick={onNavigate} className={plain}>Log In</Link>
+          <Link to="/signup" onClick={onNavigate} className={primary}>Sign Up</Link>
+        </>
+      )}
+    </div>
   );
 }

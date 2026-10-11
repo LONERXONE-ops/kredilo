@@ -24,7 +24,7 @@ export default function RegistrationSuccess() {
           <Link to="/dashboard" className="mt-8 flex min-h-12 w-full max-w-sm items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90">
             Continue to Dashboard <ArrowRight size={18} />
           </Link>
-          <p className="mt-4 text-xs text-white/40">Demo mode: no real account was created.</p>
+          <p className="mt-4 text-xs text-white/40">Next, verify your email using the link we sent. Withdrawals and cash rewards are not live yet.</p>
         </div>
 
         <div className="rounded-[2rem] border border-white/15 bg-[#0b0b0b]/80 p-6 sm:p-9">

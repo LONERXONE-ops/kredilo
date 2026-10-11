@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Coins, Gamepad2, Lock, Mail, WalletCards, Zap } from 'lucide-react';
 import { AuthShell } from '../../components/AuthShell';
 import { AuthField } from '../../components/AuthField';
+import { useAuth } from '../../lib/auth';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const from = (location.state as { from?: string } | null)?.from ?? '/dashboard';
 
   return (
     <AuthShell
@@ -27,21 +33,29 @@ export default function Login() {
     >
       <form
         className="space-y-4"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          navigate('/dashboard');
+          setBusy(true);
+          setError('');
+          try {
+            await login(email, password);
+            navigate(from, { replace: true });
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Could not log in.');
+          } finally {
+            setBusy(false);
+          }
         }}
       >
         <AuthField label="Email Address" icon={Mail} type="email" placeholder="Enter your email address" value={email} onChange={setEmail} autoComplete="email" />
         <AuthField label="Password" icon={Lock} type="password" placeholder="Enter your password" value={password} onChange={setPassword} autoComplete="current-password" />
-        <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center gap-2"><input type="checkbox" defaultChecked className="h-4 w-4 accent-white" /> Remember me</label>
+        <div className="flex justify-end text-sm">
           <Link to="/forgot-password" className="font-semibold underline underline-offset-4">Forgot password?</Link>
         </div>
-        <button type="submit" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90">
-          Log In <ArrowRight size={18} />
+        {error && <p role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+        <button type="submit" disabled={busy} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-60">
+          {busy ? 'Logging in...' : 'Log In'} <ArrowRight size={18} />
         </button>
-        <p className="text-center text-xs text-white/40">Demo mode: sign-in is simulated. No real account is checked yet.</p>
         <div className="flex items-center gap-3 text-xs text-white/40"><span className="h-px flex-1 bg-white/15" />or<span className="h-px flex-1 bg-white/15" /></div>
         <button type="button" disabled className="min-h-12 w-full cursor-not-allowed rounded-full border border-white/15 text-sm font-semibold text-white/40">
           Continue with Google (coming soon)

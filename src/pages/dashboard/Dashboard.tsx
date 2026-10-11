@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Gamepad2, Search } from 'lucide-react';
 import { mockTasks, mockUser } from '../../lib/mockData';
+import { useAuth } from '../../lib/auth';
 import type { Task, TaskStatus } from '../../lib/mockData';
 import { CONFIG, formatTokens, tokensToNaira } from '../../lib/config';
 import { Tabs } from '../../components/Tabs';
@@ -39,6 +40,7 @@ function MyTasks({ tasks }: { tasks: Task[] }) {
 }
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const tab: Tab = params.get('tab') === 'mine' ? 'mine' : 'explore';
   const setTab = (t: Tab) => setParams(t === 'explore' ? {} : { tab: t }, { replace: true });
@@ -63,7 +65,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div>
         <p className="text-white/60">Good to see you again,</p>
-        <h1 className="text-4xl font-extrabold sm:text-5xl">{mockUser.name} 👋</h1>
+        <h1 className="text-4xl font-extrabold sm:text-5xl">{user?.email.split("@")[0]} 👋</h1>
         <p className="mt-2 max-w-xl text-white/55">
           Complete tasks, play games and track your tokens. Everything below is demo data.
         </p>

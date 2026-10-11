@@ -3,12 +3,15 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Mail } from 'lucide-react';
 import { AuthShell } from '../../components/AuthShell';
 import { AuthField } from '../../components/AuthField';
+import { apiRequest } from '../../lib/auth';
 
 const stepIcon = (n: string) => ({ icon: () => <span className="text-xl font-extrabold">{n}</span> });
 
 export default function AccountRecovery() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   return (
     <AuthShell
@@ -27,18 +30,28 @@ export default function AccountRecovery() {
     >
       <form
         className="space-y-4"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          setSent(true);
+          setBusy(true);
+          setError('');
+          try {
+            await apiRequest('/api/auth/forgot', { email });
+            setSent(true);
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Something went wrong.');
+          } finally {
+            setBusy(false);
+          }
         }}
       >
         <AuthField label="Email Address" icon={Mail} type="email" placeholder="Enter your email address" value={email} onChange={setEmail} autoComplete="email" />
-        <button type="submit" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90">
-          Send Recovery Link <ArrowRight size={18} />
+        {error && <p role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+        <button type="submit" disabled={busy} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-60">
+          {busy ? 'Sending...' : 'Send Recovery Link'} <ArrowRight size={18} />
         </button>
         {sent && (
           <p role="status" className="rounded-2xl border border-white/15 bg-white/[0.05] px-4 py-3 text-sm text-white/80">
-            Demo mode: no email was sent. Recovery will work once the backend and email delivery are connected.
+            If an account exists for that email, a recovery link has been sent.
           </p>
         )}
         <div className="flex items-center gap-3 text-xs text-white/40"><span className="h-px flex-1 bg-white/15" />or<span className="h-px flex-1 bg-white/15" /></div>

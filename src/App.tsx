@@ -2,6 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { DashboardLayout } from './components/DashboardLayout';
 import Home from './pages/Home';
+import { AuthProvider } from './lib/auth';
+import VerifyEmail from './pages/auth/VerifyEmail';
+import ResetPassword from './pages/auth/ResetPassword';
 import HowItWorks from './pages/HowItWorks';
 import ExploreCategories from './pages/ExploreCategories';
 import FeaturedTasks from './pages/FeaturedTasks';
@@ -36,7 +39,7 @@ import NotFound from './pages/NotFound';
 
 function App() {
   return (
-    <BrowserRouter>
+    <AuthProvider><BrowserRouter>
       <Routes>
         {/* Public */}
         <Route element={<Layout />}>
@@ -56,6 +59,8 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/recover" element={<AccountRecovery />} />
           <Route path="/welcome" element={<RegistrationSuccess />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Route>
 
         {/* User Dashboard */}
@@ -84,7 +89,7 @@ function App() {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </BrowserRouter>
+    </BrowserRouter></AuthProvider>
   );
 }
 
