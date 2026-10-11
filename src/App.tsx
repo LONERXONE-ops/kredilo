@@ -39,6 +39,10 @@ import AdminFunding from './pages/admin/AdminFunding';
 import AdminTeam from './pages/admin/AdminTeam';
 import AcceptInvite from './pages/admin/AcceptInvite';
 import AdminSection from './pages/admin/AdminSection';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminLedger from './pages/admin/AdminLedger';
+import AdminAudit from './pages/admin/AdminAudit';
+import AdminFraud from './pages/admin/AdminFraud';
 import AdminWithdrawals from './pages/admin/AdminWithdrawals';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminSubmissions from './pages/admin/AdminSubmissions';
@@ -96,7 +100,11 @@ function App() {
           <Route path="payments" element={<AdminPayments />} />
           <Route path="withdrawals" element={<AdminWithdrawals />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="users" element={<AdminUsers />} />
           <Route path="funding" element={<AdminFunding />} />
+          <Route path="ledger" element={<AdminLedger />} />
+          <Route path="audit" element={<AdminAudit />} />
+          <Route path="fraud" element={<AdminFraud />} />
           <Route path="team" element={<AdminTeam />} />
           <Route path=":section" element={<AdminSection />} />
         </Route>
