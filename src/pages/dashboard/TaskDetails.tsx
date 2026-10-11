@@ -1,52 +1,174 @@
-import { useParams, Link } from 'react-router-dom';
-import { mockTasks } from '../../lib/mockData';
-import { Clock, Coins, ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Coins, ImageUp, Loader2 } from 'lucide-react';
+import { acceptTask, fileToDataUrl, listMySubmissions, listTasks, statusLabel, submitTask } from '../../lib/tasks';
+import type { MySubmission, Task } from '../../lib/tasks';
 
 export default function TaskDetails() {
-  const { id } = useParams();
-  const task = mockTasks.find(t => t.id === id) || mockTasks[0];
-  const [submitted, setSubmitted] = useState(false);
+  const { id = '' } = useParams();
+  const navigate = useNavigate();
+  const [task, setTask] = useState<Task | null>(null);
+  const [sub, setSub] = useState<MySubmission | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  if (!task) return <div>Task not found</div>;
+  const [image, setImage] = useState<string>('');
+  const [preview, setPreview] = useState<string>('');
+  const [text, setText] = useState('');
+  const [handle, setHandle] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const load = async () => {
+    try {
+      const [tasks, subs] = await Promise.all([listTasks(), listMySubmissions()]);
+      setTask(tasks.find((t) => t.id === id) ?? null);
+      setSub(subs.find((s) => s.taskId === id) ?? null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not load the task.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    void load();
+  }, [id]);
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    setError('');
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setImage(dataUrl);
+      setPreview(dataUrl);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not read that image.');
+    }
+  };
+
+  const accept = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await acceptTask(id);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not start the task.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submit = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await submitTask({
+        taskId: id,
+        image: task?.proofType === 'screenshot' ? image : undefined,
+        text: task?.proofType === 'link' || task?.proofType === 'text' ? text : undefined,
+        handle: task?.needsHandle ? handle : undefined,
+      });
+      navigate('/dashboard?tab=mine');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not submit your proof.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading) return <p className="px-2 py-10 text-center text-sm text-white/50">Loading...</p>;
+
+  if (!task && sub) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <Link to="/dashboard" className="mb-6 inline-flex items-center gap-2 text-sm text-white/60 hover:text-white"><ArrowLeft size={16} /> Back</Link>
+        <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-6">
+          <h1 className="text-2xl font-extrabold">{sub.title}</h1>
+          <p className="mt-2 text-white/60">Status: {statusLabel[sub.status]}</p>
+          {sub.rejectReason && <p className="mt-2 text-sm text-red-400">Reason: {sub.rejectReason}</p>}
+        </div>
+      </div>
+    );
+  }
+  if (!task) return (
+    <div className="mx-auto max-w-2xl">
+      <Link to="/dashboard" className="mb-6 inline-flex items-center gap-2 text-sm text-white/60 hover:text-white"><ArrowLeft size={16} /> Back</Link>
+      <p className="rounded-3xl border border-white/10 p-8 text-center text-white/50">This task is no longer available.</p>
+    </div>
+  );
+
+  const started = sub && sub.status !== 'rejected';
 
   return (
-    <div className="max-w-3xl">
-      <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-white/60 mb-6 hover:text-white">
-        <ArrowLeft size={16} /> Back to tasks
-      </Link>
-      <div className="border border-white/10 rounded-3xl p-8 bg-[#111]">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-xs px-2 py-1 rounded-full bg-white/10">{task.category}</span>
-          <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">Available</span>
+    <div className="mx-auto max-w-2xl">
+      <Link to="/dashboard" className="mb-6 inline-flex items-center gap-2 text-sm text-white/60 hover:text-white"><ArrowLeft size={16} /> Back to tasks</Link>
+      <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-6 sm:p-8">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-white/15 px-2.5 py-0.5 text-xs font-semibold">{task.category}</span>
+          <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">{task.remaining} left</span>
         </div>
-        <h1 className="text-3xl font-bold mb-2">{task.title}</h1>
-        <div className="flex items-center gap-6 text-sm text-white/60 mb-6">
-          <span className="flex items-center gap-1"><Coins size={16} /> {task.reward} Tokens</span>
-          <span className="flex items-center gap-1"><Clock size={16} /> {task.timeMinutes} minutes</span>
+        <h1 className="text-3xl font-extrabold">{task.title}</h1>
+        <div className="mt-2 flex items-center gap-1.5 text-lg font-bold"><Coins size={18} /> {task.reward} tokens</div>
+        <p className="mt-4 whitespace-pre-wrap leading-relaxed text-white/70">{task.description}</p>
+
+        {task.photo && (
+          <img src={`/api/uploads?file=${task.photo}`} alt="" className="mt-4 max-h-64 rounded-2xl border border-white/10 object-contain" />
+        )}
+
+        {error && <p role="alert" className="mt-5 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+
+        <div className="mt-6">
+          {sub?.status === 'pending_review' && (
+            <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-200">
+              Proof submitted. Pending confirmation — you’ll get your tokens once an admin approves it.
+            </div>
+          )}
+          {sub?.status === 'approved' && (
+            <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-300">
+              Completed. {task.reward} tokens have been added to your wallet.
+            </div>
+          )}
+
+          {!started && (
+            <button onClick={accept} disabled={busy} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-60 sm:w-auto sm:px-10">
+              {busy ? <Loader2 size={18} className="animate-spin" /> : null} Start Task
+            </button>
+          )}
+
+          {started && sub?.status === 'in_progress' && (
+            <div className="space-y-4">
+              {task.needsHandle && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold">Your social handle</label>
+                  <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="e.g. @yourname" className="h-12 w-full rounded-2xl border border-white/15 bg-black/40 px-4 text-sm outline-none focus:border-white/40" />
+                </div>
+              )}
+              {task.proofType === 'screenshot' && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold">Upload your screenshot</label>
+                  <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+                  <button onClick={() => fileRef.current?.click()} className="flex min-h-28 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/25 bg-black/30 text-sm text-white/60 hover:border-white/50">
+                    {preview ? <img src={preview} alt="preview" className="max-h-40 rounded-xl" /> : <><ImageUp size={26} /> Tap to choose a screenshot</>}
+                  </button>
+                </div>
+              )}
+              {(task.proofType === 'link' || task.proofType === 'text') && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold">{task.proofType === 'link' ? 'Paste your link' : 'Enter your proof'}</label>
+                  <input value={text} onChange={(e) => setText(e.target.value)} className="h-12 w-full rounded-2xl border border-white/15 bg-black/40 px-4 text-sm outline-none focus:border-white/40" />
+                </div>
+              )}
+              <button
+                onClick={submit}
+                disabled={busy || (task.proofType === 'screenshot' && !image) || (task.needsHandle && !handle)}
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-50"
+              >
+                {busy ? <Loader2 size={18} className="animate-spin" /> : null} Submit Proof
+              </button>
+            </div>
+          )}
         </div>
-        <p className="text-white/70 mb-6">{task.description}</p>
-        <h3 className="font-semibold mb-3">Requirements</h3>
-        <ul className="space-y-2 mb-8">
-          {task.requirements.map((r, i) => (
-            <li key={i} className="flex items-center gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-xs">✓</span> {r}</li>
-          ))}
-        </ul>
-        {task.requiresProof && (
-          <div className="mb-6 p-4 border border-white/10 rounded-xl bg-black/30">
-            <label className="text-sm font-medium block mb-2">Submit Proof (screenshot or link)</label>
-            <input type="text" placeholder="Paste proof URL or description" className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm" />
-          </div>
-        )}
-        {!submitted ? (
-          <button onClick={() => setSubmitted(true)} className="w-full sm:w-auto bg-white text-black px-8 py-3 rounded-full font-semibold">
-            Start Task / Submit
-          </button>
-        ) : (
-          <div className="p-4 border border-emerald-500/30 bg-emerald-500/10 rounded-xl text-emerald-400 text-sm">
-            Submission received. Awaiting verification. (Demo — no real reward credited)
-          </div>
-        )}
       </div>
     </div>
   );

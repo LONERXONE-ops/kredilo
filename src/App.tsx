@@ -37,6 +37,7 @@ import AdminFunding from './pages/admin/AdminFunding';
 import AdminTeam from './pages/admin/AdminTeam';
 import AcceptInvite from './pages/admin/AcceptInvite';
 import AdminSection from './pages/admin/AdminSection';
+import AdminSubmissions from './pages/admin/AdminSubmissions';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -86,6 +87,7 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminOverview />} />
           <Route path="tasks" element={<AdminTasks />} />
+          <Route path="submissions" element={<AdminSubmissions />} />
           <Route path="funding" element={<AdminFunding />} />
           <Route path="team" element={<AdminTeam />} />
           <Route path=":section" element={<AdminSection />} />
