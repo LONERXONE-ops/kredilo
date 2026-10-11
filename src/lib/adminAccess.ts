@@ -7,6 +7,7 @@ const everyone: AdminRole[] = ['owner', 'reviewer', 'support'];
 export const sectionRoles: Record<string, AdminRole[]> = {
   '': everyone,
   tasks: ['owner'],
+  payments: ['owner'],
   submissions: ['owner', 'reviewer'],
   users: ['owner', 'support'],
   withdrawals: ['owner'],

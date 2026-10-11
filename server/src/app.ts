@@ -3,6 +3,7 @@ import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { adminRoutes } from './admin.ts';
 import { walletRoutes } from './wallet.ts';
 import { taskRoutes } from './tasks.ts';
+import { postRoutes } from './posts.ts';
 import { audit } from './db.ts';
 import type { Db } from './db.ts';
 import {
@@ -142,6 +143,7 @@ export function createApp(db: Db, o: AppOptions): Server {
   adminRoutes({ db, route, requireUser, options: o });
   walletRoutes({ db, route, requireUser });
   taskRoutes({ db, route, requireUser });
+  postRoutes({ db, route, requireUser });
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     try {

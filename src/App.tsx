@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import PostTask from './pages/dashboard/PostTask';
+import AdminPayments from './pages/admin/AdminPayments';
 import { DashboardLayout } from './components/DashboardLayout';
 import Home from './pages/Home';
 import { AuthProvider } from './lib/auth';
@@ -76,6 +78,7 @@ function App() {
           <Route path="/dashboard/wallet" element={<Wallet />} />
           <Route path="/dashboard/notifications" element={<Notifications />} />
           <Route path="/dashboard/profile" element={<Profile />} />
+          <Route path="/dashboard/post" element={<PostTask />} />
           <Route path="/dashboard/games" element={<GamesHub />} />
           <Route path="/games/snake" element={<SnakeGame />} />
           <Route path="/games/memory" element={<MemoryMatch />} />
@@ -88,6 +91,7 @@ function App() {
           <Route index element={<AdminOverview />} />
           <Route path="tasks" element={<AdminTasks />} />
           <Route path="submissions" element={<AdminSubmissions />} />
+          <Route path="payments" element={<AdminPayments />} />
           <Route path="funding" element={<AdminFunding />} />
           <Route path="team" element={<AdminTeam />} />
           <Route path=":section" element={<AdminSection />} />

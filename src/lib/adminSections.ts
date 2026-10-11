@@ -1,10 +1,11 @@
-import { Banknote, ClipboardCheck, LayoutDashboard, ListChecks, ScrollText, Settings, ShieldAlert, Users, Wallet, Landmark, UserPlus } from 'lucide-react';
+import { Banknote, ClipboardCheck, LayoutDashboard, ListChecks, ScrollText, Settings, ShieldAlert, Users, Wallet, Landmark, UserPlus, Receipt } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export const adminNav: { path: string; label: string; icon: LucideIcon }[] = [
   { path: '', label: 'Overview', icon: LayoutDashboard },
   { path: 'tasks', label: 'Tasks', icon: ListChecks },
   { path: 'submissions', label: 'Submissions', icon: ClipboardCheck },
+  { path: 'payments', label: 'Payments', icon: Receipt },
   { path: 'users', label: 'Users', icon: Users },
   { path: 'withdrawals', label: 'Withdrawals', icon: Wallet },
   { path: 'funding', label: 'Funding', icon: Landmark },

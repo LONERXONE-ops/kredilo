@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, ChevronRight, FileText, LifeBuoy, LogOut, MailCheck, MessageCircle, ShieldCheck } from 'lucide-react';
+import { Bell, ChevronRight, FileText, LifeBuoy, LogOut, MailCheck, Megaphone, MessageCircle, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { apiRequest, useAuth } from '../../lib/auth';
 
@@ -74,6 +74,11 @@ export default function Profile() {
         <Row to="/dashboard/notifications" icon={Bell} title="Notifications" text="Task approvals, rejections and updates" />
         <Row to="/forgot-password" icon={ShieldCheck} title="Change password" text="Get a link to set a new password" />
       </div>
+
+      <Link to="/dashboard/post" className="flex min-h-16 items-center gap-4 rounded-3xl border border-white/10 bg-[#0e0e0e] px-5 hover:border-white/25">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10"><Megaphone size={20} /></span>
+        <span className="min-w-0 flex-1"><span className="block font-bold">Post a Task</span><span className="block text-sm text-white/50">Pay to have Kredilo users do a task for you</span></span>
+      </Link>
 
       <section id="help" className="rounded-3xl border border-white/10 bg-[#0e0e0e] px-5 py-2">
         <h2 className="pb-1 pt-3 text-sm font-extrabold uppercase tracking-wider text-white/45">Help &amp; Support</h2>

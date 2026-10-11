@@ -1,0 +1,157 @@
+import { audit } from './db.ts';
+import type { Db } from './db.ts';
+import { newId } from './auth.ts';
+import type { UserRow } from './auth.ts';
+import { HttpError } from './http.ts';
+import type { Ctx } from './http.ts';
+import { saveImage } from './uploads.ts';
+
+type Deps = {
+  db: Db;
+  route: (method: string, path: string, h: (c: Ctx) => Promise<unknown>) => void;
+  requireUser: (c: Ctx) => UserRow;
+};
+
+const CATEGORIES = ['Social Media', 'Surveys', 'Apps & Sign Ups', 'Content Creation', 'Gaming', 'Shopping & Offers', 'Research & Reviews', 'Other'];
+const str = (v: unknown, max = 2000) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+const int = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) ? v : NaN);
+
+type PricingRow = { days: number; price_naira: number; reward_tokens: number };
+type TaskRow = {
+  id: string; kind: string; title: string; description: string; category: string; reward_tokens: number;
+  proof_type: string; needs_handle: number; photo_file: string | null; max_completions: number;
+  approved_count: number; status: string; created_by: string; pool_tokens: number; price_naira: number | null;
+  days: number | null; expires_at: string | null; receipt_file: string | null; payment_note: string | null; created_at: string;
+};
+type SubRow = {
+  id: string; task_id: string; user_id: string; status: string; proof_file: string | null; proof_text: string | null;
+  handle: string | null; submitted_at: string | null;
+};
+
+function pricing(db: Db): PricingRow[] {
+  return db
+    .prepare('SELECT days, price_naira, reward_tokens FROM post_pricing WHERE id IN (SELECT MAX(id) FROM post_pricing GROUP BY days) ORDER BY days')
+    .all() as PricingRow[];
+}
+
+export function postRoutes({ db, route, requireUser }: Deps) {
+  const getTask = (id: string) => db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as TaskRow | undefined;
+  const requireAdmin = (c: Ctx): UserRow => {
+    const u = requireUser(c);
+    if (u.role === 'user') throw new HttpError(403, 'Admins only.');
+    return u;
+  };
+
+  const posterView = (t: TaskRow) => ({
+    id: t.id, title: t.title, description: t.description, category: t.category, reward: t.reward_tokens,
+    needsHandle: !!t.needs_handle, photo: t.photo_file, days: t.days, priceNaira: t.price_naira,
+    maxCompletions: t.max_completions, approvedCount: t.approved_count, status: t.status,
+    paymentNote: t.payment_note, expiresAt: t.expires_at,
+  });
+
+  route('GET', '/api/post/pricing', async (c) => {
+    requireUser(c);
+    return {
+      options: pricing(db),
+      categories: CATEGORIES,
+      payTo: {
+        bankName: process.env.PAY_BANK ?? '',
+        accountName: process.env.PAY_ACCOUNT_NAME ?? '',
+        accountNumber: process.env.PAY_ACCOUNT_NUMBER ?? '',
+      },
+    };
+  });
+
+  route('POST', '/api/post/create', async (c) => {
+    const u = requireUser(c);
+    const title = str(c.body.title, 120);
+    const description = str(c.body.description, 2000);
+    const category = CATEGORIES.includes(str(c.body.category, 40)) ? str(c.body.category, 40) : 'Other';
+    const days = int(c.body.days);
+    const maxCompletions = int(c.body.maxCompletions);
+    const needsHandle = c.body.needsHandle ? 1 : 0;
+    if (!title || !description) throw new HttpError(400, 'Title and description are required.');
+    if (!Number.isInteger(maxCompletions) || maxCompletions <= 0) throw new HttpError(400, 'Set how many people can do the task.');
+
+    const plan = pricing(db).find((p) => p.days === days);
+    if (!plan) throw new HttpError(400, 'Choose a valid duration.');
+
+    if (!c.body.photo) throw new HttpError(400, 'Add a photo for your task.');
+    if (!c.body.receipt) throw new HttpError(400, 'Attach your payment receipt.');
+    const photo = saveImage(c.body.photo).file;
+    const receipt = saveImage(c.body.receipt).file;
+
+    const pool = plan.reward_tokens * maxCompletions;
+    const id = newId();
+    db.prepare(
+      `INSERT INTO tasks (id, kind, title, description, category, reward_tokens, proof_type, needs_handle, photo_file,
+        max_completions, status, created_by, pool_tokens, price_naira, days, receipt_file)
+       VALUES (?, 'posted', ?, ?, ?, ?, 'screenshot', ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?)`,
+    ).run(id, title, description, category, plan.reward_tokens, needsHandle, photo, maxCompletions, u.id, pool, plan.price_naira, days, receipt);
+    audit(db, u.id, 'post.create', id, { days, price: plan.price_naira, pool });
+    return { id, status: 'pending_payment', priceNaira: plan.price_naira, reward: plan.reward_tokens, pool };
+  });
+
+  route('GET', '/api/post/mine', async (c) => {
+    const u = requireUser(c);
+    const tasks = db.prepare("SELECT * FROM tasks WHERE kind = 'posted' AND created_by = ? ORDER BY created_at DESC").all(u.id) as TaskRow[];
+    return { tasks: tasks.map(posterView) };
+  });
+
+  route('GET', '/api/post/doers', async (c) => {
+    const u = requireUser(c);
+    const task = getTask(str(c.query.taskId, 64));
+    if (!task || task.created_by !== u.id) throw new HttpError(404, 'Task not found.');
+    const subs = db.prepare("SELECT id, status, handle, proof_file, submitted_at FROM submissions WHERE task_id = ? ORDER BY created_at").all(task.id) as SubRow[];
+    const ongoing = subs.filter((s) => s.status === 'in_progress');
+    const done = subs.filter((s) => s.status === 'pending_review' || s.status === 'approved');
+    const view = (s: SubRow) => ({ id: s.id, status: s.status, handle: s.handle, proofFile: s.proof_file, submittedAt: s.submitted_at });
+    return { ongoing: ongoing.map(view), completed: done.map(view) };
+  });
+
+  route('GET', '/api/admin/posts', async (c) => {
+    requireAdmin(c);
+    const rows = db.prepare("SELECT * FROM tasks WHERE kind = 'posted' AND status = 'pending_payment' ORDER BY created_at").all() as TaskRow[];
+    return {
+      posts: rows.map((t) => ({
+        id: t.id, title: t.title, description: t.description, category: t.category, reward: t.reward_tokens,
+        maxCompletions: t.max_completions, days: t.days, priceNaira: t.price_naira, pool: t.pool_tokens,
+        photo: t.photo_file, receipt: t.receipt_file, createdAt: t.created_at,
+      })),
+    };
+  });
+
+  route('POST', '/api/admin/posts/confirm', async (c) => {
+    const admin = requireAdmin(c);
+    const note = str(c.body.note, 300);
+    const task = getTask(str(c.body.taskId, 64));
+    if (!task || task.kind !== 'posted') throw new HttpError(404, 'Posted task not found.');
+    if (task.status !== 'pending_payment') throw new HttpError(409, 'This task is not awaiting payment.');
+
+    const expiresAt = new Date(Date.now() + (task.days ?? 1) * 86_400_000).toISOString();
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      const already = db.prepare("SELECT 1 FROM reserve WHERE reason = 'post_payment' AND ref_id = ?").get(task.id);
+      if (!already) db.prepare("INSERT INTO reserve (amount, reason, ref_type, ref_id) VALUES (?, 'post_payment', 'posted_task', ?)").run(task.pool_tokens, task.id);
+      db.prepare("UPDATE tasks SET status = 'live', payment_note = ?, expires_at = ? WHERE id = ? AND status = 'pending_payment'").run(note || null, expiresAt, task.id);
+      audit(db, admin.id, 'post.confirm', task.id, { pool: task.pool_tokens });
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      throw e;
+    }
+    return { ok: true };
+  });
+
+  route('POST', '/api/admin/posts/reject', async (c) => {
+    const admin = requireAdmin(c);
+    const note = str(c.body.note, 300);
+    if (!note) throw new HttpError(400, 'Give a reason so the poster knows why.');
+    const task = getTask(str(c.body.taskId, 64));
+    if (!task || task.kind !== 'posted') throw new HttpError(404, 'Posted task not found.');
+    if (task.status !== 'pending_payment') throw new HttpError(409, 'This task is not awaiting payment.');
+    db.prepare("UPDATE tasks SET status = 'rejected', payment_note = ? WHERE id = ?").run(note, task.id);
+    audit(db, admin.id, 'post.reject', task.id);
+    return { ok: true };
+  });
+}

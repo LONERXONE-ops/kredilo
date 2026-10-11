@@ -175,7 +175,7 @@ export function taskRoutes({ db, route, requireUser }: Deps) {
         refType: 'task',
         refId: task.id,
         idempotencyKey: `sub:${sub.id}`,
-        fromReserve: task.kind === 'admin',
+        fromReserve: true,
         actorId: admin.id,
       });
     } catch (e) {
@@ -215,7 +215,11 @@ export function taskRoutes({ db, route, requireUser }: Deps) {
     const raw = str(c.query.file, 100);
     const file = /^[a-f0-9]{64}\.(png|jpg|webp)$/.test(raw) ? raw : '';
     if (!file) throw new HttpError(400, 'Bad file.');
-    const allowed = u.role !== 'user' || db.prepare('SELECT 1 FROM submissions WHERE proof_file = ? AND user_id = ?').get(file, u.id);
+    const allowed =
+      u.role !== 'user' ||
+      db.prepare('SELECT 1 FROM submissions WHERE proof_file = ? AND user_id = ?').get(file, u.id) ||
+      db.prepare("SELECT 1 FROM tasks WHERE created_by = ? AND (photo_file = ? OR id IN (SELECT task_id FROM submissions WHERE proof_file = ?))").get(u.id, file, file) ||
+      db.prepare("SELECT 1 FROM tasks WHERE photo_file = ? AND status = 'live'").get(file);
     if (!allowed) throw new HttpError(403, 'Not allowed.');
     const full = path.join(UPLOAD_DIR, file);
     if (!existsSync(full)) throw new HttpError(404, 'File not found.');
