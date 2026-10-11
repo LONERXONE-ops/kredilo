@@ -158,7 +158,7 @@ export function createApp(db: Db, o: AppOptions): Server {
         res,
         ip: req.socket.remoteAddress ?? 'unknown',
         cookies: parseCookies(req.headers.cookie),
-        body: await readJson(req),
+        body: await readJson(req, url.pathname === '/api/tasks/submit' ? 8_000_000 : 16_384),
         query: Object.fromEntries(url.searchParams),
       };
       const data = await h(c);
