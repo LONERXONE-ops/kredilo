@@ -21,11 +21,13 @@ export async function setup(ownerEmail = 'owner@example.com') {
     if (body !== undefined) headers['content-type'] = 'application/json';
     const res = await fetch(base + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
     const setCookie = res.headers.get('set-cookie') ?? '';
-    return { status: res.status, json: (await res.json()) as any, cookie: setCookie.split(';')[0] };
+    const isJson = (res.headers.get('content-type') ?? '').includes('application/json');
+    const json = isJson ? ((await res.json()) as any) : null;
+    if (!isJson) await res.arrayBuffer();
+    return { status: res.status, json, cookie: setCookie.split(';')[0] };
   }
   const tokenFrom = (m: Mail) => new URL(m.text.split('\n').find((l) => l.startsWith('http'))!).searchParams.get('token')!;
 
-  // Creates an account, optionally verifies the email, and returns its session cookie.
   async function makeUser(email: string, verify = true) {
     const r = await call('POST', '/api/auth/signup', { email, password: PW });
     if (verify) {

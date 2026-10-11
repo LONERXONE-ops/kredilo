@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { adminRoutes } from './admin.ts';
 import { walletRoutes } from './wallet.ts';
+import { taskRoutes } from './tasks.ts';
 import { audit } from './db.ts';
 import type { Db } from './db.ts';
 import {
@@ -140,6 +141,7 @@ export function createApp(db: Db, o: AppOptions): Server {
 
   adminRoutes({ db, route, requireUser, options: o });
   walletRoutes({ db, route, requireUser });
+  taskRoutes({ db, route, requireUser });
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     try {
@@ -157,8 +159,10 @@ export function createApp(db: Db, o: AppOptions): Server {
         ip: req.socket.remoteAddress ?? 'unknown',
         cookies: parseCookies(req.headers.cookie),
         body: await readJson(req),
+        query: Object.fromEntries(url.searchParams),
       };
       const data = await h(c);
+      if (res.headersSent) return;
       sendJson(res, 200, data, res.hasHeader('Set-Cookie') ? { 'Set-Cookie': res.getHeader('Set-Cookie') as string } : {});
     } catch (e) {
       if (e instanceof HttpError) return sendJson(res, e.status, { error: e.message });

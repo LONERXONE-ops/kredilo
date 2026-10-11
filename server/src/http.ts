@@ -14,6 +14,7 @@ export type Ctx = {
   ip: string;
   cookies: Record<string, string>;
   body: Record<string, unknown>;
+  query: Record<string, string>;
 };
 
 export function parseCookies(header: string | undefined): Record<string, string> {
