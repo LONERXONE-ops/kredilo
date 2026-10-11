@@ -4,6 +4,7 @@ import { adminRoutes } from './admin.ts';
 import { walletRoutes } from './wallet.ts';
 import { taskRoutes } from './tasks.ts';
 import { postRoutes } from './posts.ts';
+import { withdrawalRoutes } from './withdrawals.ts';
 import { audit } from './db.ts';
 import type { Db } from './db.ts';
 import {
@@ -144,6 +145,7 @@ export function createApp(db: Db, o: AppOptions): Server {
   walletRoutes({ db, route, requireUser });
   taskRoutes({ db, route, requireUser });
   postRoutes({ db, route, requireUser });
+  withdrawalRoutes({ db, route, requireUser });
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     try {

@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Clock, Info, Lock } from 'lucide-react';
+import { Clock, Info, Loader2, Lock } from 'lucide-react';
 import { getWallet } from '../../lib/tasks';
 import type { Wallet as WalletData } from '../../lib/tasks';
 import { Tabs } from '../../components/Tabs';
+import { flagNotReceived, getWithdrawals, requestWithdrawal, wStatusLabel } from '../../lib/withdrawals';
+import type { MyWithdrawal, WithdrawalState } from '../../lib/withdrawals';
 
 type Tab = 'overview' | 'withdraw' | 'transactions';
 
@@ -38,44 +40,105 @@ function Overview({ w, goto }: { w: WalletData; goto: (t: Tab) => void }) {
 }
 
 function Withdraw({ w }: { w: WalletData }) {
-  const pct = Math.min(100, (w.balanceTokens / w.minWithdrawalTokens) * 100);
-  const steps = [
-    ['Requested', 'You ask to withdraw. The tokens are set aside for you.'],
-    ['Processing', 'An admin is sending the transfer and checking it.'],
-    ['Paid', 'Shown only after the transfer is confirmed sent.'],
-    ['Failed / Cancelled', 'Your tokens go back to your balance.'],
-  ];
+  const [state, setState] = useState<WithdrawalState | null>(null);
+  const [bankName, setBankName] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [amount, setAmount] = useState(String(w.minWithdrawalTokens));
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(() => { getWithdrawals().then(setState).catch(() => setState(null)); }, []);
+  useEffect(load, [load]);
+
+  const field = 'h-12 w-full rounded-2xl border border-white/15 bg-black/40 px-4 text-sm outline-none focus:border-white/40';
+  const naira = (tokens: number) => Math.floor((tokens * w.rate.naira) / w.rate.tokens);
+
+  const submit = async () => {
+    setBusy(true); setError('');
+    try {
+      await requestWithdrawal({ bankName, accountName, accountNumber, amountTokens: Number(amount) });
+      setAccountName(''); setAccountNumber('');
+      load();
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not submit your request.'); }
+    finally { setBusy(false); }
+  };
+
+  const flag = async (id: string) => { try { await flagNotReceived(id); load(); } catch { /* ignore */ } };
+
+  if (!state) return <p className="rounded-3xl border border-white/10 p-8 text-center text-sm text-white/45">Loading...</p>;
+
+  const chip = (st: string) => st === 'paid' ? 'bg-emerald-500/15 text-emerald-400' : st === 'cancelled' ? 'bg-red-500/15 text-red-300' : 'bg-amber-400/15 text-amber-300';
+  const history = (wd: MyWithdrawal) => (
+    <div key={wd.id} className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="font-extrabold">{wd.amountTokens.toLocaleString()} tokens → ₦{wd.amountNaira.toLocaleString()}</div>
+          <div className="mt-0.5 text-xs text-white/45">{wd.bankName} ••••{wd.accountLast4} · {new Date(wd.createdAt).toLocaleDateString()}</div>
+        </div>
+        <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${chip(wd.status)}`}>{wStatusLabel[wd.status]}</span>
+      </div>
+      {wd.status === 'paid' && wd.transferRef && <div className="mt-2 text-xs text-white/55">Transfer ref: {wd.transferRef}</div>}
+      {wd.status === 'cancelled' && wd.adminNote && <div className="mt-2 text-sm text-red-400">Reason: {wd.adminNote}</div>}
+      {wd.status === 'paid' && !wd.notReceived && (
+        <button onClick={() => flag(wd.id)} className="mt-3 text-xs font-bold text-white/60 underline underline-offset-4">I didn’t receive this</button>
+      )}
+      {wd.notReceived && <div className="mt-2 text-xs text-amber-300">You reported this as not received. We’ll look into it.</div>}
+    </div>
+  );
+
+  if (!state.open) {
+    return (
+      <div className="space-y-4">
+        <div className="flex gap-3 rounded-3xl border border-white/15 bg-white/[0.04] p-5">
+          <Lock size={22} className="mt-0.5 shrink-0" />
+          <div>
+            <div className="font-extrabold">Withdrawals are not open yet</div>
+            <p className="mt-1 text-sm leading-relaxed text-white/60">
+              {state.opensAt ? `Withdrawals open on ${new Date(state.opensAt).toLocaleString()}.` : 'A go-live date has not been set yet.'} Payouts are sent by hand as bank transfers.
+            </p>
+          </div>
+        </div>
+        <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-6">
+          <div className="text-sm font-semibold text-white/50">Minimum withdrawal</div>
+          <div className="mt-1 text-2xl font-extrabold">{w.minWithdrawalTokens.toLocaleString()} tokens = ₦{w.minWithdrawalNaira.toLocaleString()}</div>
+          <div className="mt-2 text-xs text-white/45">Your balance: {w.balanceTokens.toLocaleString()} tokens</div>
+        </div>
+        {state.withdrawals.length > 0 && <div className="space-y-3">{state.withdrawals.map(history)}</div>}
+      </div>
+    );
+  }
+
+  const belowMin = w.balanceTokens < w.minWithdrawalTokens;
   return (
     <div className="space-y-4">
-      <div className="flex gap-3 rounded-3xl border border-white/15 bg-white/[0.04] p-5">
-        <Lock size={22} className="mt-0.5 shrink-0" />
-        <div>
-          <div className="font-extrabold">Withdrawals are not open yet</div>
-          <p className="mt-1 text-sm leading-relaxed text-white/60">
-            Payouts are sent by hand as bank transfers once withdrawals go live. Nothing on this page moves any money yet.
-          </p>
+      {state.hasOpenRequest ? (
+        <div className="rounded-3xl border border-amber-400/30 bg-amber-400/10 p-5 text-sm text-amber-200">
+          You have a withdrawal in progress. You can request another once it is settled.
         </div>
-      </div>
-      <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-6">
-        <div className="text-sm font-semibold text-white/50">Minimum withdrawal</div>
-        <div className="mt-1 text-2xl font-extrabold">{w.minWithdrawalTokens.toLocaleString()} tokens = ₦{w.minWithdrawalNaira.toLocaleString()}</div>
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full rounded-full bg-white/70" style={{ width: `${pct}%` }} />
+      ) : belowMin ? (
+        <div className="rounded-3xl border border-white/15 bg-white/[0.04] p-5 text-sm text-white/60">
+          You need at least {w.minWithdrawalTokens.toLocaleString()} tokens (₦{w.minWithdrawalNaira.toLocaleString()}) to withdraw. You have {w.balanceTokens.toLocaleString()}.
         </div>
-        <div className="mt-2 text-xs text-white/45">Your balance: {w.balanceTokens.toLocaleString()} tokens</div>
-      </div>
-      <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-6">
-        <h3 className="mb-4 font-extrabold">How withdrawals will work</h3>
-        <ol className="space-y-4">
-          {steps.map(([title, text], i) => (
-            <li key={title} className="flex gap-4">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-extrabold">{i + 1}</span>
-              <div><div className="font-bold">{title}</div><div className="text-sm text-white/55">{text}</div></div>
-            </li>
-          ))}
-        </ol>
-      </div>
-      <button disabled className="min-h-14 w-full cursor-not-allowed rounded-full bg-white/10 text-sm font-bold text-white/40">Withdrawals unavailable</button>
+      ) : (
+        <div className="space-y-3 rounded-3xl border border-white/15 bg-[#0e0e0e] p-5 sm:p-6">
+          <h3 className="font-extrabold">Request a withdrawal</h3>
+          <input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="Bank (e.g. Opay, GTBank)" className={field} />
+          <input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="Account name" className={field} />
+          <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} inputMode="numeric" placeholder="Account number" className={field} />
+          <div>
+            <label className="mb-1 block text-xs text-white/50">Amount in tokens (min {w.minWithdrawalTokens.toLocaleString()})</label>
+            <input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" min={w.minWithdrawalTokens} max={w.balanceTokens} className={field} />
+            <div className="mt-1 text-xs text-white/45">You’ll receive ≈ ₦{naira(Number(amount) || 0).toLocaleString()}</div>
+          </div>
+          {error && <p role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+          <button onClick={submit} disabled={busy || !bankName || !accountName || !accountNumber} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-50">
+            {busy ? <Loader2 size={18} className="animate-spin" /> : null} Request ₦{naira(Number(amount) || 0).toLocaleString()}
+          </button>
+          <p className="text-xs text-white/40">Your tokens are held while we process the transfer by hand. You’ll be marked paid once the money is sent.</p>
+        </div>
+      )}
+      {state.withdrawals.length > 0 && <div className="space-y-3">{state.withdrawals.map(history)}</div>}
     </div>
   );
 }

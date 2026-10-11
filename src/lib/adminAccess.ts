@@ -10,7 +10,7 @@ export const sectionRoles: Record<string, AdminRole[]> = {
   payments: ['owner'],
   submissions: ['owner', 'reviewer'],
   users: ['owner', 'support'],
-  withdrawals: ['owner'],
+  withdrawals: ['owner', 'reviewer', 'support'],
   funding: ['owner'],
   ledger: ['owner'],
   fraud: ['owner', 'reviewer'],
