@@ -1,4 +1,4 @@
-import { Banknote, ClipboardCheck, LayoutDashboard, ListChecks, ScrollText, Settings, ShieldAlert, Users, Wallet, Landmark } from 'lucide-react';
+import { Banknote, ClipboardCheck, LayoutDashboard, ListChecks, ScrollText, Settings, ShieldAlert, Users, Wallet, Landmark, UserPlus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export const adminNav: { path: string; label: string; icon: LucideIcon }[] = [
@@ -12,6 +12,7 @@ export const adminNav: { path: string; label: string; icon: LucideIcon }[] = [
   { path: 'fraud', label: 'Fraud', icon: ShieldAlert },
   { path: 'audit', label: 'Audit Log', icon: ScrollText },
   { path: 'settings', label: 'Settings', icon: Settings },
+  { path: 'team', label: 'Team', icon: UserPlus },
 ];
 
 export type Placeholder = { title: string; description: string; items: string[]; rule: string };

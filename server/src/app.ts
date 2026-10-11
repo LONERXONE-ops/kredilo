@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
+import { adminRoutes } from './admin.ts';
 import { audit } from './db.ts';
 import type { Db } from './db.ts';
 import {
@@ -135,6 +136,8 @@ export function createApp(db: Db, o: AppOptions): Server {
     audit(db, userId, 'user.password_reset', userId);
     return { ok: true };
   });
+
+  adminRoutes({ db, route, requireUser, options: o });
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     try {

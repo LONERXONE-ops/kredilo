@@ -34,6 +34,8 @@ import { AdminLayout } from './components/AdminLayout';
 import AdminOverview from './pages/admin/AdminOverview';
 import AdminTasks from './pages/admin/AdminTasks';
 import AdminFunding from './pages/admin/AdminFunding';
+import AdminTeam from './pages/admin/AdminTeam';
+import AcceptInvite from './pages/admin/AcceptInvite';
 import AdminSection from './pages/admin/AdminSection';
 import NotFound from './pages/NotFound';
 
@@ -61,6 +63,7 @@ function App() {
           <Route path="/welcome" element={<RegistrationSuccess />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/admin-invite" element={<AcceptInvite />} />
         </Route>
 
         {/* User Dashboard */}
@@ -84,6 +87,7 @@ function App() {
           <Route index element={<AdminOverview />} />
           <Route path="tasks" element={<AdminTasks />} />
           <Route path="funding" element={<AdminFunding />} />
+          <Route path="team" element={<AdminTeam />} />
           <Route path=":section" element={<AdminSection />} />
         </Route>
 
