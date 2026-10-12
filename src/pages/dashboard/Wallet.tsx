@@ -16,6 +16,8 @@ const reasonLabel: Record<string, string> = {
   withdrawal_release: 'Withdrawal returned',
   admin_adjust: 'Adjustment',
   referral: 'Referral bonus',
+  game_reward: 'Game reward',
+  follow_bonus: 'Follow bonus',
 };
 
 // Live D–H–M–S countdown to a target ISO time.

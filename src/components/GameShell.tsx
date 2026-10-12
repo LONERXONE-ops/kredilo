@@ -12,7 +12,7 @@ export function GameShell({ title, goal, children }: { title: string; goal: stri
       <p className="mt-1 text-white/60">{goal}</p>
       <div className="mt-6">{children}</div>
       <p className="mt-6 text-center text-xs leading-relaxed text-white/40">
-        Games are just for fun right now — they don’t pay kreds yet.
+        Earn kreds once a day per game. Play your best round, then claim your reward.
       </p>
     </div>
   );

@@ -8,6 +8,8 @@ import { withdrawalRoutes } from './withdrawals.ts';
 import { adminDataRoutes } from './adminData.ts';
 import { avatarRoutes } from './avatar.ts';
 import { notificationRoutes } from './notifications.ts';
+import { gameRoutes } from './games.ts';
+import { socialRoutes } from './social.ts';
 import { audit } from './db.ts';
 import type { Db } from './db.ts';
 import {
@@ -180,6 +182,8 @@ export function createApp(db: Db, o: AppOptions): Server {
   adminDataRoutes({ db, route, requireUser });
   avatarRoutes({ db, route, requireUser });
   notificationRoutes({ db, route, requireUser });
+  gameRoutes({ db, route, requireUser });
+  socialRoutes({ db, route, requireUser });
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     try {

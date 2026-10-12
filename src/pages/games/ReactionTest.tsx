@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { GameShell } from '../../components/GameShell';
+import { GameResult } from '../../components/GameResult';
+
+// Faster reaction = more kreds. ~200ms → 30, 500ms+ → 0.
+const reactionKreds = (ms: number) => Math.max(0, Math.min(30, Math.round((500 - ms) / 10)));
 
 type State = 'idle' | 'waiting' | 'ready' | 'result' | 'early';
 
@@ -53,6 +57,9 @@ export default function ReactionTest() {
         {label[state]}
       </button>
       <p className="mt-4 text-center text-sm font-bold">{best === null ? 'No best time yet' : `Best: ${best} ms`}</p>
+      {state === 'result' && best !== null && (
+        <GameResult game="reaction" score={reactionKreds(best)} headline={`Best reaction: ${best} ms`} />
+      )}
     </GameShell>
   );
 }

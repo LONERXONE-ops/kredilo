@@ -6,6 +6,9 @@ import { BottomDock } from './BottomDock';
 import { useAuth } from '../lib/auth';
 import { Avatar } from './Avatar';
 import { getUnreadCount } from '../lib/notifications';
+import { anySocialConfigured } from '../lib/socials';
+import { getFollowStatus } from '../lib/follow';
+import { FollowGate } from './FollowGate';
 
 // The four sections that live in the bottom dock. Any other screen shows a back button instead.
 const DOCK_ROUTES = ['/dashboard', '/dashboard/wallet', '/dashboard/games', '/dashboard/profile'];
@@ -15,6 +18,8 @@ export function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
+  // null = still deciding; true = must complete the follow gate before using the app.
+  const [gate, setGate] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -23,6 +28,15 @@ export function DashboardLayout() {
     window.addEventListener('notifications-read', clear);
     return () => window.removeEventListener('notifications-read', clear);
   }, [user, location.pathname]);
+
+  useEffect(() => {
+    // Only gate regular users, and only once social pages are configured. Admins and
+    // the un-configured state pass straight through so nobody is ever trapped.
+    if (!user || user.role !== 'user' || !anySocialConfigured()) { setGate(false); return; }
+    getFollowStatus()
+      .then((s) => setGate(!s.platforms.every((p) => s.claimed.includes(p))))
+      .catch(() => setGate(false));
+  }, [user]);
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center bg-[#050505] text-sm text-white/50">Loading...</div>;
@@ -72,11 +86,18 @@ export function DashboardLayout() {
         </div>
       </header>
 
-      <main className={`relative mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8 ${isDock ? 'pb-36' : 'pb-16'} animate-[fadeup_320ms_ease-out]`}>
-        <Outlet />
-      </main>
-
-      {isDock && <BottomDock />}
+      {gate ? (
+        <main className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
+          <FollowGate onDone={() => setGate(false)} />
+        </main>
+      ) : (
+        <>
+          <main className={`relative mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8 ${isDock ? 'pb-36' : 'pb-16'} animate-[fadeup_320ms_ease-out]`}>
+            <Outlet />
+          </main>
+          {isDock && <BottomDock />}
+        </>
+      )}
     </div>
   );
 }

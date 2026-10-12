@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Cloud, Heart, Moon, Star, Sun, Zap } from 'lucide-react';
 import { GameShell } from '../../components/GameShell';
+import { GameResult } from '../../components/GameResult';
 
 const icons = [Star, Heart, Moon, Sun, Cloud, Zap];
 
@@ -70,8 +71,14 @@ export default function MemoryMatch() {
           );
         })}
       </div>
-      {won && <p className="mt-5 text-center font-bold">All pairs found in {moves} moves!</p>}
-      <button onClick={restart} className="mt-5 min-h-12 w-full rounded-full border border-white/25 text-sm font-bold hover:bg-white/5">
+      {won && (
+        <GameResult
+          game="memory"
+          score={Math.max(10, 50 - Math.max(0, moves - icons.length) * 3)}
+          headline={`All pairs found in ${moves} moves!`}
+        />
+      )}
+      <button onClick={restart} className="pressable mt-5 min-h-12 w-full rounded-full border border-white/25 text-sm font-bold hover:bg-white/5">
         {won ? 'Play Again' : 'Restart'}
       </button>
     </GameShell>

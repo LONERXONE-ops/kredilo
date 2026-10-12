@@ -5,6 +5,8 @@ import type { LucideIcon } from 'lucide-react';
 import { apiRequest, changeUsername, removeAvatar, uploadAvatar, useAuth } from '../../lib/auth';
 import { Avatar } from '../../components/Avatar';
 import { Kred } from '../../components/Kred';
+import { SocialLinks } from '../../components/SocialLinks';
+import { configuredSocials } from '../../lib/socials';
 import { fileToDataUrl } from '../../lib/tasks';
 import { getReferral } from '../../lib/referral';
 import type { ReferralInfo } from '../../lib/referral';
@@ -136,7 +138,7 @@ export default function Profile() {
             ) : (
               <div className="flex items-center gap-2">
                 <span className="truncate text-lg font-extrabold">{user.username}</span>
-                {user.emailVerified && <BadgeCheck size={17} className="shrink-0 text-emerald-400" aria-label="Verified" />}
+                {user.role !== 'user' && <BadgeCheck size={17} className="shrink-0 text-emerald-400" aria-label="Admin" />}
                 <button onClick={() => { setNewName(user.username); setEditing(true); }} aria-label="Edit username" className="pressable shrink-0 rounded-full p-1.5 text-white/50 hover:bg-white/10 hover:text-white"><Pencil size={14} /></button>
               </div>
             )}
@@ -187,6 +189,13 @@ export default function Profile() {
         <Row to="/terms" icon={FileText} title="Terms of Service" text="The rules for using Kredilo" />
         <Row to="/privacy" icon={FileText} title="Privacy Policy" text="How your data is handled" />
       </section>
+
+      {configuredSocials().length > 0 && (
+        <div className="flex flex-col items-center gap-3 py-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-white/40">Follow Kredilo</span>
+          <SocialLinks />
+        </div>
+      )}
 
       <button
         onClick={async () => { await logout(); navigate('/'); }}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, Gamepad2, ImageIcon, Search } from 'lucide-react';
+import { ArrowRight, Gamepad2, ImageIcon, Search, Wallet as WalletIcon } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { getWallet, listMySubmissions, listTasks, statusLabel } from '../../lib/tasks';
 import type { MySubmission, Task, Wallet } from '../../lib/tasks';
@@ -138,6 +138,57 @@ function MyTasksList() {
   );
 }
 
+// The emerald hero — balance up top, stat tiles below, styled like the referral card.
+function BalanceHero({ user, wallet }: { user: { username: string } | null; wallet: Wallet | null }) {
+  const balance = wallet?.balanceTokens ?? 0;
+  const balanceNaira = wallet?.balanceNaira ?? 0;
+  const min = wallet?.minWithdrawalTokens ?? 2000;
+  const earned = wallet?.transactions.filter((t) => t.amount > 0).reduce((a, b) => a + b.amount, 0) ?? 0;
+  const rate = wallet?.rate;
+  const earnedNaira = rate && rate.tokens > 0 ? Math.floor((earned * rate.naira) / rate.tokens) : 0;
+
+  return (
+    <section className="animate-[fadeup_320ms_ease-out] overflow-hidden rounded-[1.9rem] border border-emerald-400/15 bg-gradient-to-br from-emerald-500/[0.16] via-emerald-500/[0.05] to-transparent p-6 sm:p-7">
+      <div>
+        <p className="text-sm text-white/55">Good to see you again,</p>
+        <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl">{user?.username} 👋</h1>
+      </div>
+
+      <div className="mt-6">
+        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-300/80">
+          <WalletIcon size={13} /> Available balance
+        </div>
+        <div className="mt-1.5 flex flex-wrap items-end gap-x-3 gap-y-1">
+          <span className="flex items-center gap-2 text-5xl font-extrabold leading-none sm:text-6xl">
+            {balance.toLocaleString()} <Kred size={32} className="text-emerald-400" />
+          </span>
+          <span className="pb-1 text-sm font-semibold text-white/50">≈ ₦{balanceNaira.toLocaleString()}</span>
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-black/25 p-4 text-center">
+          <div className="flex items-center justify-center gap-1 text-xl font-extrabold text-emerald-400">{earned.toLocaleString()} <Kred size={15} /></div>
+          <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-white/40">Total earned</div>
+          <div className="text-[10px] text-white/30">≈ ₦{earnedNaira.toLocaleString()}</div>
+        </div>
+        <div className="rounded-2xl bg-black/25 p-4 text-center">
+          <div className="flex items-center justify-center gap-1 text-xl font-extrabold">{min.toLocaleString()} <Kred size={15} /></div>
+          <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-white/40">Min withdrawal</div>
+          <div className="text-[10px] text-white/30">to cash out</div>
+        </div>
+      </div>
+
+      <Link
+        to="/dashboard/wallet"
+        className="pressable mt-5 flex min-h-12 items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90"
+      >
+        <WalletIcon size={16} /> Open Wallet <ArrowRight size={15} />
+      </Link>
+    </section>
+  );
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
@@ -150,31 +201,9 @@ export default function Dashboard() {
   }, []);
   useEffect(load, [load]);
 
-  const earned = wallet?.transactions.filter((t) => t.amount > 0).reduce((a, b) => a + b.amount, 0) ?? 0;
-  const stats = [
-    { label: 'Available', value: wallet?.balanceTokens ?? 0, kred: true },
-    { label: 'Total Earned', value: earned, kred: true },
-    { label: 'Min Withdrawal', value: wallet?.minWithdrawalTokens ?? 2000, kred: true },
-  ];
-
   return (
     <div className="space-y-8">
-      <div>
-        <p className="text-white/60">Good to see you again,</p>
-        <h1 className="text-4xl font-extrabold sm:text-5xl">{user?.username} 👋</h1>
-        <p className="mt-2 max-w-xl text-white/55">Complete tasks, earn kreds, and track your balance.</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3">
-        {stats.map((s) => (
-          <Link key={s.label} to="/dashboard/wallet" className="pressable rounded-3xl border border-white/10 bg-[#0e0e0e] p-4 transition hover:border-white/25 sm:p-5">
-            <div className="text-xs font-semibold text-white/50">{s.label}</div>
-            <div className="mt-1 flex items-center gap-1.5 text-2xl font-extrabold sm:text-3xl">
-              {s.value.toLocaleString()} {s.kred && <Kred size={18} className="text-emerald-400" />}
-            </div>
-          </Link>
-        ))}
-      </div>
+      <BalanceHero user={user} wallet={wallet} />
 
       <section className="space-y-4">
         <Tabs

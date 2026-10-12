@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
 import { GameShell } from '../../components/GameShell';
+import { GameResult } from '../../components/GameResult';
 
 const SIZE = 15;
 const GOAL = 50;
@@ -89,9 +90,9 @@ export default function SnakeGame() {
     <button
       aria-label={label}
       onPointerDown={() => turn(d)}
-      className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.05] active:bg-white/20"
+      className="pressable flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.05] active:bg-white/25"
     >
-      <Icon size={24} />
+      <Icon size={26} />
     </button>
   );
 
@@ -122,23 +123,24 @@ export default function SnakeGame() {
       {game.status !== 'playing' ? (
         <div className="mt-5 space-y-3 text-center">
           {game.status === 'over' && (
-            <p className="font-bold">
-              Game over. Score {game.score}. {game.score >= GOAL ? 'You reached the goal!' : `You needed ${GOAL}.`}
-            </p>
+            <>
+              <p className="font-bold">Game over — you scored {game.score}.</p>
+              <GameResult game="snake" score={game.score} headline={game.score >= GOAL ? 'You reached the goal! 🎉' : 'Nice run!'} />
+            </>
           )}
-          <button onClick={start} className="min-h-12 w-full rounded-full bg-white text-sm font-bold text-black hover:bg-white/90">
+          <button onClick={start} className="pressable min-h-12 w-full rounded-full bg-white text-sm font-bold text-black hover:bg-white/90">
             {game.status === 'over' ? 'Play Again' : 'Start Game'}
           </button>
         </div>
       ) : (
-        <div className="mt-5 flex flex-col items-center gap-2">
+        <div className="mt-6 flex flex-col items-center gap-3">
           {pad('U', ArrowUp, 'Up')}
-          <div className="flex gap-2">
+          <div className="flex items-center gap-6">
             {pad('L', ArrowLeft, 'Left')}
             {pad('D', ArrowDown, 'Down')}
             {pad('R', ArrowRight, 'Right')}
           </div>
-          <p className="text-xs text-white/40">Swipe on the board, use arrow keys or WASD, or tap the buttons.</p>
+          <p className="mt-1 text-xs text-white/40">Swipe on the board, use arrow keys / WASD, or tap the buttons.</p>
         </div>
       )}
     </GameShell>

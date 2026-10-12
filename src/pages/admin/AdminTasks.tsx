@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { ImageUp, Plus, Trash2 } from 'lucide-react';
+import { ClipboardList, ImageUp, Link2, Plus, Settings2, Trash2 } from 'lucide-react';
 import { createTask, deleteTask } from '../../lib/admin';
 import { fileToDataUrl, listTasks } from '../../lib/tasks';
 import type { Task } from '../../lib/tasks';
 import { Kred } from '../../components/Kred';
+import { Field, FormSection, SelectInput, Toggle, inputCls } from '../../components/Field';
 
 const CATEGORIES = ['Social Media', 'Surveys', 'Apps & Sign Ups', 'Content Creation', 'Gaming', 'Shopping & Offers', 'Research & Reviews', 'Other'];
-const field = 'h-12 w-full rounded-2xl border border-white/15 bg-black/40 px-4 text-sm outline-none transition focus:border-white/40';
 
 export default function AdminTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -37,8 +37,7 @@ export default function AdminTasks() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    setBusy(true);
-    setError('');
+    setBusy(true); setError('');
     try {
       await createTask({ title, description, category, reward: Number(reward), proofType, needsHandle, maxCompletions: Number(maxCompletions), link: link || undefined, photo: photo || undefined });
       setOpen(false);
@@ -46,9 +45,7 @@ export default function AdminTasks() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create the task.');
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   };
 
   const remove = async (t: Task) => {
@@ -72,38 +69,42 @@ export default function AdminTasks() {
       </div>
 
       {open && (
-        <form onSubmit={submit} className="animate-[popin_240ms_ease-out] space-y-3 rounded-3xl border border-white/15 bg-[#0e0e0e] p-5 sm:p-6">
+        <form onSubmit={submit} className="animate-[popin_240ms_ease-out] space-y-4">
           {error && <p role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
-          <input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title" className={field} />
-          <textarea required value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="What should the doer do?" className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-sm outline-none transition focus:border-white/40" />
-          <div className="grid grid-cols-2 gap-3">
-            <select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Category" className={field}>
-              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select value={proofType} onChange={(e) => setProofType(e.target.value)} aria-label="Proof type" className={field}>
-              <option value="screenshot">Screenshot proof</option>
-              <option value="link">Link proof</option>
-              <option value="text">Text proof</option>
-              <option value="none">No proof</option>
-            </select>
-            <label className="flex items-center gap-2 text-sm"><span className="text-white/60">Reward (kreds)</span></label>
-            <label className="flex items-center gap-2 text-sm"><span className="text-white/60">Max completions</span></label>
-            <input required type="number" min="1" value={reward} onChange={(e) => setReward(e.target.value)} className={field} />
-            <input required type="number" min="1" value={maxCompletions} onChange={(e) => setMaxCompletions(e.target.value)} className={field} />
-          </div>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={needsHandle} onChange={(e) => setNeedsHandle(e.target.checked)} className="h-4 w-4 accent-white" /> Require a social handle</label>
-          <div>
-            <label className="mb-1 block text-xs text-white/50">Link to complete the task (optional — for tasks done on another site)</label>
-            <input value={link} onChange={(e) => setLink(e.target.value)} inputMode="url" placeholder="https://..." className={field} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-white/50">Task image (optional)</label>
-            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => onPhoto(e.target.files?.[0])} />
-            <button type="button" onClick={() => fileRef.current?.click()} className="pressable flex min-h-20 w-full flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-white/25 bg-black/30 text-sm text-white/55 hover:border-white/50">
-              {photo ? <img src={photo} alt="" className="max-h-28 rounded-xl" /> : <><ImageUp size={22} /> Tap to add an image</>}
-            </button>
-          </div>
-          <button disabled={busy} className="pressable min-h-12 w-full rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-60">{busy ? 'Creating...' : 'Create & publish task'}</button>
+
+          <FormSection title="Task details" subtitle="What should the doer do?" icon={<ClipboardList size={18} />}>
+            <Field label="Task title"><input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Follow our X account" className={inputCls} /></Field>
+            <Field label="Description"><textarea required value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Clear step-by-step instructions" className="w-full rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm outline-none transition placeholder:text-white/30 focus:border-white/40 focus:bg-black/60" /></Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Category"><SelectInput value={category} onChange={setCategory} ariaLabel="Category">{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</SelectInput></Field>
+              <Field label="Proof type"><SelectInput value={proofType} onChange={setProofType} ariaLabel="Proof type">
+                <option value="screenshot">Screenshot proof</option>
+                <option value="link">Link proof</option>
+                <option value="text">Text proof</option>
+                <option value="none">No proof</option>
+              </SelectInput></Field>
+            </div>
+          </FormSection>
+
+          <FormSection title="Reward & limits" icon={<Settings2 size={18} />}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Reward (kreds)"><input required type="number" min="1" value={reward} onChange={(e) => setReward(e.target.value)} className={inputCls} /></Field>
+              <Field label="Max completions"><input required type="number" min="1" value={maxCompletions} onChange={(e) => setMaxCompletions(e.target.value)} className={inputCls} /></Field>
+            </div>
+            <Toggle on={needsHandle} onChange={setNeedsHandle} label="Require a social handle" />
+          </FormSection>
+
+          <FormSection title="Link & image" subtitle="Optional" icon={<Link2 size={18} />}>
+            <Field label="Link to complete the task" hint="For tasks done on another site."><input value={link} onChange={(e) => setLink(e.target.value)} inputMode="url" placeholder="https://..." className={inputCls} /></Field>
+            <Field label="Task image">
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => onPhoto(e.target.files?.[0])} />
+              <button type="button" onClick={() => fileRef.current?.click()} className="pressable flex min-h-24 w-full flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-white/20 bg-black/30 text-sm text-white/55 hover:border-white/45">
+                {photo ? <img src={photo} alt="" className="max-h-32 rounded-xl" /> : <><ImageUp size={24} /> Tap to add an image</>}
+              </button>
+            </Field>
+          </FormSection>
+
+          <button disabled={busy} className="pressable min-h-14 w-full rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-60">{busy ? 'Creating...' : 'Create & publish task'}</button>
         </form>
       )}
 

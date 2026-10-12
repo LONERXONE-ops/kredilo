@@ -79,7 +79,7 @@ export function creditReward(
     const ledgerId = append(db, {
       userId: opts.userId,
       amount: opts.tokens,
-      reason: 'task_reward',
+      reason: opts.refType === 'referral' ? 'referral' : opts.refType === 'game' ? 'game_reward' : opts.refType === 'follow' ? 'follow_bonus' : 'task_reward',
       refType: opts.refType,
       refId: opts.refId,
       rate,

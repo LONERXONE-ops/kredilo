@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { Logo } from './Logo';
+import { SocialLinks } from './SocialLinks';
 import { useAuth } from '../lib/auth';
 
 const navLinks = [
@@ -69,6 +70,7 @@ export function Footer() {
           <p className="mt-4 text-white/50 max-w-xs leading-relaxed">
             Kredilo is a task-to-earn platform where you complete simple activities, earn kreds, and get rewarded.
           </p>
+          <SocialLinks className="mt-5" />
         </div>
         <div>
           <h4 className="font-semibold mb-3">About</h4>
