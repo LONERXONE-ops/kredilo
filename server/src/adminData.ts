@@ -3,7 +3,7 @@ import type { Db } from './db.ts';
 import type { UserRow } from './auth.ts';
 import { HttpError } from './http.ts';
 import type { Ctx } from './http.ts';
-import { balance, currentSettings, reserveAvailable, tokensToNaira } from './ledger.ts';
+import { addFunding, balance, currentSettings, reserveAvailable, tokensToNaira } from './ledger.ts';
 import { avatarUrl } from './uploads.ts';
 import { deleteUserSessions } from './auth.ts';
 
@@ -87,6 +87,31 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
       availableTokens: available, availableNaira: tokensToNaira(available, rate),
       heldForWithdrawalTokens: liabilities, heldForWithdrawalNaira: tokensToNaira(liabilities, rate),
     };
+  });
+
+  // Owner tops up the reward reserve.
+  route('POST', '/api/admin/funding', async (c) => {
+    const admin = requireOwner(c);
+    const tokens = Math.floor(Number(c.body.tokens));
+    if (!Number.isFinite(tokens) || tokens <= 0) throw new HttpError(400, 'Enter a positive number of kreds.');
+    if (tokens > 1_000_000_000) throw new HttpError(400, 'That amount is too large.');
+    addFunding(db, tokens, 'funding_add', 'manual', undefined, admin.id);
+    const { rate } = currentSettings(db);
+    const available = reserveAvailable(db);
+    return { ok: true, availableTokens: available, availableNaira: tokensToNaira(available, rate) };
+  });
+
+  // Owner changes the kred <-> naira exchange rate. Stored as a new versioned settings row,
+  // so past ledger entries (which snapshot their own rate) are untouched.
+  route('POST', '/api/admin/rate', async (c) => {
+    const admin = requireOwner(c);
+    const kreds = Math.floor(Number(c.body.kreds));
+    const naira = Math.floor(Number(c.body.naira));
+    if (!Number.isFinite(kreds) || kreds <= 0 || !Number.isFinite(naira) || naira <= 0) throw new HttpError(400, 'Enter positive values for both kreds and naira.');
+    const cur = currentSettings(db);
+    db.prepare('INSERT INTO settings (tokens_per_naira_num, tokens_per_naira_den, min_withdrawal_tokens) VALUES (?, ?, ?)').run(kreds, naira, cur.minWithdrawalTokens);
+    audit(db, admin.id, 'settings.rate', null, { kreds, naira });
+    return { ok: true, rate: { tokens: kreds, naira } };
   });
 
   route('GET', '/api/admin/ledger', async (c) => {
