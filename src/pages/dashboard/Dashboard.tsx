@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, Gamepad2, ImageIcon, Search, Wallet as WalletIcon } from 'lucide-react';
+import { ArrowRight, Gamepad2, ImageIcon, ListChecks, Search, Sparkles, Wallet as WalletIcon } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { getWallet, listMySubmissions, listTasks, statusLabel } from '../../lib/tasks';
 import type { MySubmission, Task, Wallet } from '../../lib/tasks';
 import { Tabs } from '../../components/Tabs';
 import { Kred } from '../../components/Kred';
+import { EmptyState } from '../../components/EmptyState';
 
 type Tab = 'explore' | 'mine';
 
@@ -105,7 +106,11 @@ function ExploreList() {
         </div>
       )}
       {filtered.length === 0 ? (
-        <p className="rounded-3xl border border-white/10 p-10 text-center text-sm text-white/45">No tasks match. Check back soon.</p>
+        tasks.length === 0 ? (
+          <EmptyState icon={Sparkles} title="No tasks yet" text="New tasks are added regularly. Check back soon — or earn some kreds with a game while you wait." action={{ to: '/dashboard/games', label: 'Play games' }} />
+        ) : (
+          <EmptyState icon={Search} title="No matches" text="No tasks match your search. Try a different word or category." />
+        )
       ) : (
         <div className="stagger grid gap-3 sm:grid-cols-2">
           {filtered.map((t) => <TaskTile key={t.id} task={t} />)}
@@ -121,7 +126,7 @@ function MyTasksList() {
     listMySubmissions().then(setSubs).catch(() => setSubs([]));
   }, []);
   if (!subs) return <div className="space-y-3">{[0, 1].map((i) => <div key={i} className="skeleton h-24 rounded-3xl" />)}</div>;
-  if (subs.length === 0) return <p className="rounded-3xl border border-white/10 p-10 text-center text-sm text-white/45">You haven’t started any tasks yet.</p>;
+  if (subs.length === 0) return <EmptyState icon={ListChecks} title="No tasks started yet" text="Pick a task from Explore and your progress will show up here." action={{ to: '/dashboard', label: 'Explore tasks' }} />;
   return (
     <div className="stagger space-y-3">
       {subs.map((s) => (

@@ -146,7 +146,8 @@ export default function TaskDetails() {
           )}
 
           {started && sub?.status === 'in_progress' && (
-            <div className="space-y-4">
+            <div className="space-y-4 rounded-2xl border border-white/10 bg-black/20 p-5">
+              <h3 className="font-extrabold">Submit your proof</h3>
               {task.needsHandle && (
                 <div>
                   <label className="mb-1.5 block text-sm font-bold">Your social handle</label>

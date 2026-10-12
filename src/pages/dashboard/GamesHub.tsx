@@ -4,11 +4,12 @@ import { ArrowRight, Check, Gamepad2, LayoutGrid, ListChecks, MousePointerClick 
 import { getGamesStatus } from '../../lib/games';
 import { Kred } from '../../components/Kred';
 
+// Each game gets its own tint so the hub reads as a colourful shelf, not four grey tiles.
 const games = [
-  { key: 'snake', icon: Gamepad2, name: 'Snake', path: '/games/snake', max: 50, desc: 'Guide the snake, eat food and grow your score.' },
-  { key: 'memory', icon: LayoutGrid, name: 'Memory Match', path: '/games/memory', max: 50, desc: 'Find matching pairs and complete the grid.' },
-  { key: 'reaction', icon: MousePointerClick, name: 'Reaction Test', path: '/games/reaction', max: 30, desc: 'Tap as fast as you can when the signal appears.' },
-  { key: 'trivia', icon: ListChecks, name: 'Trivia Quiz', path: '/games/trivia', max: 40, desc: 'Answer questions and test your knowledge.' },
+  { key: 'snake', icon: Gamepad2, name: 'Snake', path: '/games/snake', max: 50, desc: 'Guide the snake, eat food and grow your score.', tile: 'from-emerald-500/25 to-emerald-500/[0.04]', fg: 'text-emerald-300' },
+  { key: 'memory', icon: LayoutGrid, name: 'Memory Match', path: '/games/memory', max: 50, desc: 'Find matching pairs and complete the grid.', tile: 'from-violet-500/25 to-violet-500/[0.04]', fg: 'text-violet-300' },
+  { key: 'reaction', icon: MousePointerClick, name: 'Reaction Test', path: '/games/reaction', max: 30, desc: 'Tap as fast as you can when the signal appears.', tile: 'from-amber-500/25 to-amber-500/[0.04]', fg: 'text-amber-300' },
+  { key: 'trivia', icon: ListChecks, name: 'Trivia Quiz', path: '/games/trivia', max: 40, desc: 'Answer questions and test your knowledge.', tile: 'from-sky-500/25 to-sky-500/[0.04]', fg: 'text-sky-300' },
 ];
 
 export default function GamesHub() {
@@ -26,8 +27,8 @@ export default function GamesHub() {
           const done = g.key in claimed;
           return (
             <Link key={g.key} to={g.path} className="pressable flex flex-col rounded-[1.75rem] border border-white/15 bg-white/[0.02] p-4 transition hover:border-white/35">
-              <span className="relative flex h-28 items-center justify-center rounded-2xl bg-white/[0.06]">
-                <g.icon size={44} strokeWidth={1.5} />
+              <span className={`relative flex h-28 items-center justify-center rounded-2xl bg-gradient-to-br ${g.tile}`}>
+                <g.icon size={44} strokeWidth={1.5} className={g.fg} />
                 {done && <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-emerald-500/90 px-2 py-0.5 text-[10px] font-bold text-black"><Check size={11} /> Done today</span>}
               </span>
               <h2 className="mt-3 text-xl font-extrabold">{g.name}</h2>

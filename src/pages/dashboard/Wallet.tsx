@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Clock, Info, Loader2, Lock } from 'lucide-react';
+import { Clock, Info, Loader2, Lock, Receipt, Wallet as WalletIcon } from 'lucide-react';
 import { getWallet } from '../../lib/tasks';
 import type { Wallet as WalletData } from '../../lib/tasks';
 import { Tabs } from '../../components/Tabs';
 import { Kred } from '../../components/Kred';
+import { EmptyState } from '../../components/EmptyState';
 import { flagNotReceived, getWithdrawals, requestWithdrawal, wStatusLabel } from '../../lib/withdrawals';
 import type { MyWithdrawal, WithdrawalState } from '../../lib/withdrawals';
 
@@ -55,9 +56,9 @@ function Overview({ w, goto }: { w: WalletData; goto: (t: Tab) => void }) {
   const pct = Math.min(100, (w.balanceTokens / w.minWithdrawalTokens) * 100);
   return (
     <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.08] to-transparent p-6">
-        <div className="text-sm font-semibold text-white/50">Available Balance</div>
-        <div className="mt-1 flex items-center gap-2 text-5xl font-extrabold">
+      <div className="relative overflow-hidden rounded-3xl border border-emerald-400/15 bg-gradient-to-br from-emerald-500/[0.16] via-emerald-500/[0.05] to-transparent p-6">
+        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-300/80"><WalletIcon size={13} /> Available balance</div>
+        <div className="mt-1.5 flex items-center gap-2 text-5xl font-extrabold">
           {w.balanceTokens.toLocaleString()} <Kred size={34} className="text-emerald-400" />
         </div>
         <div className="mt-1 text-sm text-white/45">≈ ₦{w.balanceNaira.toLocaleString()} · {w.rate.tokens} kreds = ₦{w.rate.naira}</div>
@@ -185,7 +186,7 @@ function Withdraw({ w }: { w: WalletData }) {
 }
 
 function Transactions({ w }: { w: WalletData }) {
-  if (w.transactions.length === 0) return <p className="rounded-3xl border border-white/10 p-10 text-center text-sm text-white/45">No transactions yet. Complete a task to earn kreds.</p>;
+  if (w.transactions.length === 0) return <EmptyState icon={Receipt} title="No transactions yet" text="Complete a task or play a game to earn your first kreds — they’ll be listed here." action={{ to: '/dashboard', label: 'Find a task' }} />;
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-xs text-white/45"><Info size={14} /> Your most recent transactions.</div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 import { listNotifications, markRead, timeAgo } from '../../lib/notifications';
 import type { Notification } from '../../lib/notifications';
+import { EmptyState } from '../../components/EmptyState';
 
 export default function Notifications() {
   const [items, setItems] = useState<Notification[] | null>(null);
@@ -10,6 +11,7 @@ export default function Notifications() {
   const load = () => listNotifications().then((r) => setItems(r.notifications)).catch((e) => setError(e instanceof Error ? e.message : 'Could not load notifications.'));
   useEffect(() => {
     void load();
+    // Mark everything read once the page has been opened.
     markRead().then(() => window.dispatchEvent(new Event('notifications-read'))).catch(() => { /* ignore */ });
   }, []);
 
@@ -34,10 +36,7 @@ export default function Notifications() {
       {!items && !error && <p className="rounded-3xl border border-white/10 p-8 text-center text-sm text-white/45">Loading...</p>}
 
       {items && items.length === 0 && (
-        <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-10 text-center">
-          <Bell size={28} className="mx-auto text-white/30" />
-          <p className="mt-3 text-sm text-white/50">No notifications yet. We’ll let you know when a task is approved or a withdrawal is paid.</p>
-        </div>
+        <EmptyState icon={Bell} title="You’re all caught up" text="Approvals, rejections and withdrawal updates will show up here as they happen." />
       )}
 
       <div className="space-y-3">
