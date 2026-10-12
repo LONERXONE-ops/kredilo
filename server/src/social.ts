@@ -14,7 +14,7 @@ type Deps = {
 
 // Kreds earned for following each social platform (one-time, per platform).
 export const FOLLOW_BONUS = 10;
-const PLATFORMS = ['whatsapp', 'facebook', 'x', 'instagram'];
+const PLATFORMS = ['whatsapp', 'x', 'instagram', 'tiktok', 'facebook'];
 
 export function socialRoutes({ db, route, requireUser }: Deps) {
   route('GET', '/api/follow/status', async (c) => {

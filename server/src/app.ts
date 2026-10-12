@@ -63,6 +63,21 @@ export function createApp(db: Db, o: AppOptions): Server {
 
   route('GET', '/api/health', async () => ({ ok: true }));
 
+  // Public contact form -> emails the support inbox.
+  route('POST', '/api/contact', async (c) => {
+    if (limited(`contact:${c.ip}`, 5, 3_600_000)) throw tooMany();
+    const name = typeof c.body.name === 'string' ? c.body.name.trim().slice(0, 100) : '';
+    const email = validEmail(c.body.email);
+    const message = typeof c.body.message === 'string' ? c.body.message.trim().slice(0, 4000) : '';
+    if (!name || !email || !message) throw new HttpError(400, 'Please add your name, a valid email and a message.');
+    o.sendMail({
+      to: o.supportEmail,
+      subject: `Kredilo contact — ${name}`,
+      text: `New message from the Kredilo contact form:\n\nName: ${name}\nEmail: ${email}\n\n${message}\n\n— Reply directly to ${email}`,
+    });
+    return { ok: true };
+  });
+
   route('POST', '/api/auth/signup', async (c) => {
     if (limited(`signup:${c.ip}`, 10, 3_600_000)) throw tooMany();
     const email = validEmail(c.body.email);

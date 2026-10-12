@@ -7,7 +7,7 @@ import { SocialIcon } from './SocialIcon';
 import { Kred } from './Kred';
 import { Logo } from './Logo';
 
-const LABELS: Record<string, string> = { whatsapp: 'WhatsApp', facebook: 'Facebook', x: 'X', instagram: 'Instagram' };
+const LABELS: Record<string, string> = { whatsapp: 'WhatsApp', x: 'X', instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook' };
 
 export function FollowGate({ onDone }: { onDone: () => void }) {
   const [status, setStatus] = useState<FollowStatus | null>(null);
@@ -15,7 +15,7 @@ export function FollowGate({ onDone }: { onDone: () => void }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getFollowStatus().then(setStatus).catch(() => setStatus({ bonus: 10, platforms: ['whatsapp', 'facebook', 'x', 'instagram'], claimed: [] }));
+    getFollowStatus().then(setStatus).catch(() => setStatus({ bonus: 10, platforms: ['whatsapp', 'x', 'instagram', 'tiktok', 'facebook'], claimed: [] }));
   }, []);
 
   if (!status) return <div className="mx-auto max-w-md"><div className="skeleton h-96 rounded-3xl" /></div>;

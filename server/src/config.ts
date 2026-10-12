@@ -17,6 +17,7 @@ export const config = {
   appOrigin: process.env.APP_ORIGIN ?? 'http://localhost:5173',
   allowedOrigins: list(process.env.ALLOWED_ORIGINS, 'http://localhost:5173,http://127.0.0.1:5173'),
   isProd: process.env.NODE_ENV === 'production',
+  supportEmail: (process.env.SUPPORT_EMAIL ?? 'krediloonline@gmail.com').trim(),
 };
 
 export type AppOptions = {
@@ -24,6 +25,7 @@ export type AppOptions = {
   appOrigin: string;
   allowedOrigins: string[];
   isProd: boolean;
+  supportEmail: string;
   sendMail: (mail: { to: string; subject: string; text: string }) => void;
 };
 
