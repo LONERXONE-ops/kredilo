@@ -67,7 +67,7 @@ export function Footer() {
         <div className="col-span-2">
           <Link to="/"><Logo className="h-6 w-auto text-white" /></Link>
           <p className="mt-4 text-white/50 max-w-xs leading-relaxed">
-            Kredilo is a task-to-earn platform where you complete simple activities, earn tokens, and get rewarded.
+            Kredilo is a task-to-earn platform where you complete simple activities, earn kreds, and get rewarded.
           </p>
         </div>
         <div>

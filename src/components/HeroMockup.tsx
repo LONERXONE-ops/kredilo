@@ -51,9 +51,9 @@ export function HeroMockup() {
               </div>
             </div>
 
-            {/* Demo balance */}
+            {/* Balance */}
             <div className="rounded-2xl bg-[#161616] p-3 sm:p-4">
-              <div className="mb-3 text-[11px] font-bold text-white/90">Demo balance</div>
+              <div className="mb-3 text-[11px] font-bold text-white/90">Balance</div>
               <div className="flex items-center gap-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white/60 bg-white/10 text-[10px] font-extrabold">TK</div>
                 <div className="space-y-1.5 flex-1"><Bar w="w-full" className="bg-white/40" /><Bar w="w-2/3" /></div>

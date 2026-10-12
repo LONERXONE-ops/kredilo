@@ -6,8 +6,8 @@ const steps = [
   { icon: Search, title: 'Find an eligible task or game challenge.', text: 'Browse available tasks and games from different categories.' },
   { icon: ClipboardCheck, title: 'Complete the stated requirements.', text: 'Follow the instructions and meet the eligibility conditions.' },
   { icon: ShieldCheck, title: 'Wait for verification when required.', text: 'Some tasks need manual review. We’ll let you know once it’s verified.' },
-  { icon: Coins, title: 'Receive eligible tokens.', text: 'Approved tasks and games credit tokens to your wallet.' },
-  { icon: Wallet, title: 'Withdraw when it opens.', text: 'Withdrawals are not available yet. The planned minimum is 10,000 tokens.' },
+  { icon: Coins, title: 'Receive eligible kreds.', text: 'Approved tasks and games credit kreds to your wallet.' },
+  { icon: Wallet, title: 'Withdraw when it opens.', text: 'Withdrawals open on a date set by Kredilo. The minimum is 2,000 kreds.' },
 ];
 
 export default function HowItWorks() {
@@ -19,7 +19,7 @@ export default function HowItWorks() {
           <span className="inline-block rounded-full border border-white/25 px-4 py-1.5 text-sm font-bold">How It Works</span>
           <h1 className="mt-5 text-[2.6rem] font-extrabold leading-[1.05] sm:text-6xl">Simple Steps to Earn with Kredilo.</h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-white/60">
-            Getting started is easy. Follow these steps to complete tasks and play games for tokens.
+            Getting started is easy. Follow these steps to complete tasks and play games for kreds.
           </p>
         </div>
 
@@ -39,7 +39,7 @@ export default function HowItWorks() {
             <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10"><Rocket size={26} /></span>
             <div>
               <div className="text-lg font-extrabold">Ready to get started?</div>
-              <div className="text-sm text-white/55">Create your account and begin earning eligible tokens.</div>
+              <div className="text-sm text-white/55">Create your account and begin earning eligible kreds.</div>
             </div>
           </div>
           <Link to="/signup" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-7 text-sm font-bold text-black hover:bg-white/90">

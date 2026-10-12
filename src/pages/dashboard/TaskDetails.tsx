@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Coins, ImageUp, Loader2 } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ExternalLink, ImageUp, Loader2 } from 'lucide-react';
 import { acceptTask, fileToDataUrl, listMySubmissions, listTasks, statusLabel, submitTask } from '../../lib/tasks';
 import type { MySubmission, Task } from '../../lib/tasks';
+import { Kred } from '../../components/Kred';
 
 export default function TaskDetails() {
   const { id = '' } = useParams();
@@ -82,7 +83,6 @@ export default function TaskDetails() {
   if (!task && sub) {
     return (
       <div className="mx-auto max-w-2xl">
-        <Link to="/dashboard" className="mb-6 inline-flex items-center gap-2 text-sm text-white/60 hover:text-white"><ArrowLeft size={16} /> Back</Link>
         <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-6">
           <h1 className="text-2xl font-extrabold">{sub.title}</h1>
           <p className="mt-2 text-white/60">Status: {statusLabel[sub.status]}</p>
@@ -93,7 +93,6 @@ export default function TaskDetails() {
   }
   if (!task) return (
     <div className="mx-auto max-w-2xl">
-      <Link to="/dashboard" className="mb-6 inline-flex items-center gap-2 text-sm text-white/60 hover:text-white"><ArrowLeft size={16} /> Back</Link>
       <p className="rounded-3xl border border-white/10 p-8 text-center text-white/50">This task is no longer available.</p>
     </div>
   );
@@ -102,18 +101,28 @@ export default function TaskDetails() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link to="/dashboard" className="mb-6 inline-flex items-center gap-2 text-sm text-white/60 hover:text-white"><ArrowLeft size={16} /> Back to tasks</Link>
       <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-6 sm:p-8">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-white/15 px-2.5 py-0.5 text-xs font-semibold">{task.category}</span>
           <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">{task.remaining} left</span>
         </div>
         <h1 className="text-3xl font-extrabold">{task.title}</h1>
-        <div className="mt-2 flex items-center gap-1.5 text-lg font-bold"><Coins size={18} /> {task.reward} tokens</div>
+        <div className="mt-2 flex items-center gap-1.5 text-lg font-bold text-emerald-400"><Kred size={18} /> {task.reward} kreds</div>
         <p className="mt-4 whitespace-pre-wrap leading-relaxed text-white/70">{task.description}</p>
 
         {task.photo && (
-          <img src={`/api/uploads?file=${task.photo}`} alt="" className="mt-4 max-h-64 rounded-2xl border border-white/10 object-contain" />
+          <img src={`/api/uploads?file=${encodeURIComponent(task.photo)}`} alt="" className="mt-4 max-h-64 rounded-2xl border border-white/10 object-contain" />
+        )}
+
+        {task.link && (
+          <a
+            href={task.link}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-5 py-2.5 text-sm font-bold hover:bg-white/10"
+          >
+            <ExternalLink size={16} /> Open link to complete this task
+          </a>
         )}
 
         {error && <p role="alert" className="mt-5 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
@@ -121,12 +130,12 @@ export default function TaskDetails() {
         <div className="mt-6">
           {sub?.status === 'pending_review' && (
             <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-200">
-              Proof submitted. Pending confirmation — you’ll get your tokens once an admin approves it.
+              Proof submitted. Pending confirmation — you’ll get your kreds once an admin approves it.
             </div>
           )}
           {sub?.status === 'approved' && (
             <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-300">
-              Completed. {task.reward} tokens have been added to your wallet.
+              Completed. {task.reward} kreds have been added to your wallet.
             </div>
           )}
 

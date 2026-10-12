@@ -39,8 +39,9 @@ export default function AdminPayments() {
                 <h3 className="font-extrabold">{p.title}</h3>
                 <p className="mt-1 text-sm text-white/60">{p.description}</p>
                 <div className="mt-2 text-sm">
-                  <span className="font-bold">₦{(p.priceNaira ?? 0).toLocaleString()}</span> for {p.maxCompletions} people · {p.days} {p.days === 1 ? 'day' : 'days'} · {p.reward} tokens each · pool {p.pool} tokens
+                  <span className="font-bold">₦{(p.priceNaira ?? 0).toLocaleString()}</span> for {p.maxCompletions} people · {p.days} {p.days === 1 ? 'day' : 'days'} · {p.reward} kreds each · pool {p.pool} kreds
                 </div>
+                {p.link && <a href={p.link} target="_blank" rel="noreferrer noopener" className="mt-2 inline-block break-all text-sm text-emerald-400 underline underline-offset-4">{p.link}</a>}
               </div>
             </div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">

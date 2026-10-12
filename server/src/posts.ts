@@ -5,6 +5,8 @@ import type { UserRow } from './auth.ts';
 import { HttpError } from './http.ts';
 import type { Ctx } from './http.ts';
 import { saveImage } from './uploads.ts';
+import { cleanLink } from './tasks.ts';
+import { notify } from './notifications.ts';
 
 type Deps = {
   db: Db;
@@ -16,10 +18,46 @@ const CATEGORIES = ['Social Media', 'Surveys', 'Apps & Sign Ups', 'Content Creat
 const str = (v: unknown, max = 2000) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const int = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) ? v : NaN);
 
-type PricingRow = { days: number; price_naira: number; reward_tokens: number };
+// A posted task runs for 1-10 days. Cost and reward scale with a flat daily rate the owner can edit.
+export const MAX_POST_DAYS = 10;
+const DEFAULT_PRICE_PER_DAY = 1000; // naira
+const DEFAULT_TOKENS_PER_DAY = 30;
+
+function flag(db: Db, key: string): string | null {
+  const r = db.prepare('SELECT value FROM platform_flags WHERE key = ? ORDER BY id DESC LIMIT 1').get(key) as { value: string | null } | undefined;
+  return r?.value ?? null;
+}
+function postRate(db: Db): { perDayNaira: number; perDayTokens: number } {
+  const n = Number(flag(db, 'post_price_per_day'));
+  const t = Number(flag(db, 'post_tokens_per_day'));
+  return {
+    perDayNaira: Number.isFinite(n) && n > 0 ? n : DEFAULT_PRICE_PER_DAY,
+    perDayTokens: Number.isFinite(t) && t > 0 ? t : DEFAULT_TOKENS_PER_DAY,
+  };
+}
+
+// Close out posted tasks whose paid run has ended, and remove them so they drop off every view.
+// Ledger credits already earned are untouched; only the task and its submissions go.
+export function sweepExpiredPosts(db: Db): number {
+  const expired = db.prepare("SELECT id FROM tasks WHERE kind = 'posted' AND status IN ('live','closed') AND expires_at IS NOT NULL AND expires_at < ?").all(new Date().toISOString()) as { id: string }[];
+  let removed = 0;
+  for (const t of expired) {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      db.prepare('DELETE FROM submissions WHERE task_id = ?').run(t.id);
+      db.prepare('DELETE FROM tasks WHERE id = ?').run(t.id);
+      db.exec('COMMIT');
+      removed++;
+    } catch {
+      db.exec('ROLLBACK');
+    }
+  }
+  return removed;
+}
+
 type TaskRow = {
   id: string; kind: string; title: string; description: string; category: string; reward_tokens: number;
-  proof_type: string; needs_handle: number; photo_file: string | null; max_completions: number;
+  proof_type: string; needs_handle: number; photo_file: string | null; link_url: string | null; max_completions: number;
   approved_count: number; status: string; created_by: string; pool_tokens: number; price_naira: number | null;
   days: number | null; expires_at: string | null; receipt_file: string | null; payment_note: string | null; created_at: string;
 };
@@ -27,12 +65,6 @@ type SubRow = {
   id: string; task_id: string; user_id: string; status: string; proof_file: string | null; proof_text: string | null;
   handle: string | null; submitted_at: string | null;
 };
-
-function pricing(db: Db): PricingRow[] {
-  return db
-    .prepare('SELECT days, price_naira, reward_tokens FROM post_pricing WHERE id IN (SELECT MAX(id) FROM post_pricing GROUP BY days) ORDER BY days')
-    .all() as PricingRow[];
-}
 
 export function postRoutes({ db, route, requireUser }: Deps) {
   const getTask = (id: string) => db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as TaskRow | undefined;
@@ -44,15 +76,18 @@ export function postRoutes({ db, route, requireUser }: Deps) {
 
   const posterView = (t: TaskRow) => ({
     id: t.id, title: t.title, description: t.description, category: t.category, reward: t.reward_tokens,
-    needsHandle: !!t.needs_handle, photo: t.photo_file, days: t.days, priceNaira: t.price_naira,
+    needsHandle: !!t.needs_handle, photo: t.photo_file, link: t.link_url, days: t.days, priceNaira: t.price_naira,
     maxCompletions: t.max_completions, approvedCount: t.approved_count, status: t.status,
     paymentNote: t.payment_note, expiresAt: t.expires_at,
   });
 
   route('GET', '/api/post/pricing', async (c) => {
     requireUser(c);
+    const rate = postRate(db);
     return {
-      options: pricing(db),
+      perDayNaira: rate.perDayNaira,
+      perDayTokens: rate.perDayTokens,
+      maxDays: MAX_POST_DAYS,
       categories: CATEGORIES,
       payTo: {
         bankName: process.env.PAY_BANK ?? '',
@@ -60,6 +95,19 @@ export function postRoutes({ db, route, requireUser }: Deps) {
         accountNumber: process.env.PAY_ACCOUNT_NUMBER ?? '',
       },
     };
+  });
+
+  route('POST', '/api/admin/post-rate', async (c) => {
+    const u = requireUser(c);
+    if (u.role !== 'owner') throw new HttpError(403, 'Only the owner can change this.');
+    const naira = int(c.body.perDayNaira);
+    const tokens = int(c.body.perDayTokens);
+    if (!Number.isInteger(naira) || naira <= 0) throw new HttpError(400, 'Enter a valid price per day.');
+    if (!Number.isInteger(tokens) || tokens <= 0) throw new HttpError(400, 'Enter a valid token reward per day.');
+    db.prepare('INSERT INTO platform_flags (key, value, updated_by) VALUES (?, ?, ?)').run('post_price_per_day', String(naira), u.id);
+    db.prepare('INSERT INTO platform_flags (key, value, updated_by) VALUES (?, ?, ?)').run('post_tokens_per_day', String(tokens), u.id);
+    audit(db, u.id, 'post.rate', null, { naira, tokens });
+    return { ok: true, perDayNaira: naira, perDayTokens: tokens };
   });
 
   route('POST', '/api/post/create', async (c) => {
@@ -72,24 +120,27 @@ export function postRoutes({ db, route, requireUser }: Deps) {
     const needsHandle = c.body.needsHandle ? 1 : 0;
     if (!title || !description) throw new HttpError(400, 'Title and description are required.');
     if (!Number.isInteger(maxCompletions) || maxCompletions <= 0) throw new HttpError(400, 'Set how many people can do the task.');
+    if (!Number.isInteger(days) || days < 1 || days > MAX_POST_DAYS) throw new HttpError(400, `Choose between 1 and ${MAX_POST_DAYS} days.`);
 
-    const plan = pricing(db).find((p) => p.days === days);
-    if (!plan) throw new HttpError(400, 'Choose a valid duration.');
+    const rate = postRate(db);
+    const priceNaira = days * rate.perDayNaira;
+    const rewardTokens = days * rate.perDayTokens;
 
     if (!c.body.photo) throw new HttpError(400, 'Add a photo for your task.');
     if (!c.body.receipt) throw new HttpError(400, 'Attach your payment receipt.');
-    const photo = saveImage(c.body.photo).file;
-    const receipt = saveImage(c.body.receipt).file;
+    const link = cleanLink(c.body.link);
+    const photo = (await saveImage(c.body.photo)).file;
+    const receipt = (await saveImage(c.body.receipt)).file;
 
-    const pool = plan.reward_tokens * maxCompletions;
+    const pool = rewardTokens * maxCompletions;
     const id = newId();
     db.prepare(
-      `INSERT INTO tasks (id, kind, title, description, category, reward_tokens, proof_type, needs_handle, photo_file,
+      `INSERT INTO tasks (id, kind, title, description, category, reward_tokens, proof_type, needs_handle, photo_file, link_url,
         max_completions, status, created_by, pool_tokens, price_naira, days, receipt_file)
-       VALUES (?, 'posted', ?, ?, ?, ?, 'screenshot', ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?)`,
-    ).run(id, title, description, category, plan.reward_tokens, needsHandle, photo, maxCompletions, u.id, pool, plan.price_naira, days, receipt);
-    audit(db, u.id, 'post.create', id, { days, price: plan.price_naira, pool });
-    return { id, status: 'pending_payment', priceNaira: plan.price_naira, reward: plan.reward_tokens, pool };
+       VALUES (?, 'posted', ?, ?, ?, ?, 'screenshot', ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?)`,
+    ).run(id, title, description, category, rewardTokens, needsHandle, photo, link, maxCompletions, u.id, pool, priceNaira, days, receipt);
+    audit(db, u.id, 'post.create', id, { days, price: priceNaira, pool });
+    return { id, status: 'pending_payment', priceNaira, reward: rewardTokens, pool };
   });
 
   route('GET', '/api/post/mine', async (c) => {
@@ -116,7 +167,7 @@ export function postRoutes({ db, route, requireUser }: Deps) {
       posts: rows.map((t) => ({
         id: t.id, title: t.title, description: t.description, category: t.category, reward: t.reward_tokens,
         maxCompletions: t.max_completions, days: t.days, priceNaira: t.price_naira, pool: t.pool_tokens,
-        photo: t.photo_file, receipt: t.receipt_file, createdAt: t.created_at,
+        photo: t.photo_file, receipt: t.receipt_file, link: t.link_url, createdAt: t.created_at,
       })),
     };
   });
@@ -140,6 +191,10 @@ export function postRoutes({ db, route, requireUser }: Deps) {
       db.exec('ROLLBACK');
       throw e;
     }
+    notify(db, task.created_by, {
+      type: 'post_live', title: 'Your task is live ✅',
+      body: `"${task.title}" is now live for doers.`, refType: 'task', refId: task.id,
+    });
     return { ok: true };
   });
 
@@ -152,6 +207,10 @@ export function postRoutes({ db, route, requireUser }: Deps) {
     if (task.status !== 'pending_payment') throw new HttpError(409, 'This task is not awaiting payment.');
     db.prepare("UPDATE tasks SET status = 'rejected', payment_note = ? WHERE id = ?").run(note, task.id);
     audit(db, admin.id, 'post.reject', task.id);
+    notify(db, task.created_by, {
+      type: 'post_rejected', title: 'Posted task declined',
+      body: `"${task.title}" was not approved: ${note}`, refType: 'task', refId: task.id,
+    });
     return { ok: true };
   });
 }

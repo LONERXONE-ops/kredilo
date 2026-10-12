@@ -5,7 +5,7 @@ import { HeroMockup } from '../components/HeroMockup';
 const steps = [
   { n: '1', title: 'Choose a task', icon: FileText },
   { n: '2', title: 'Complete the requirements', icon: CheckCircle2 },
-  { n: '3', title: 'Earn eligible tokens', icon: Coins },
+  { n: '3', title: 'Earn eligible kreds', icon: Coins },
 ];
 
 export default function Home() {
@@ -24,7 +24,7 @@ export default function Home() {
               Earn Rewards.
             </h1>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-white/60 sm:text-xl">
-              Discover eligible activities, complete the requirements, and track your tokens in one place.
+              Discover eligible activities, complete the requirements, and track your kreds in one place.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/signup" className="inline-flex min-h-12 items-center gap-2.5 rounded-full bg-white px-7 py-3.5 text-base font-bold text-black transition hover:bg-white/90">
@@ -34,7 +34,7 @@ export default function Home() {
                 Explore Tasks <ArrowRight size={18} />
               </Link>
             </div>
-            <p className="mt-5 text-xs text-white/40">Demo preview. No real payments are made yet.</p>
+            <p className="mt-5 text-xs text-white/40">Complete tasks to build your balance. Withdrawals open on a set date.</p>
           </div>
 
           <HeroMockup />

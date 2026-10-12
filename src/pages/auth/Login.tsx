@@ -26,7 +26,7 @@ export default function Login() {
         items: [
           { icon: Zap, title: 'Complete simple tasks', text: 'Follow clear instructions and get rewarded.' },
           { icon: Gamepad2, title: 'Play fun games', text: 'Enjoy browser games and daily challenges.' },
-          { icon: Coins, title: 'Earn tokens', text: 'Collect tokens for approved activities.' },
+          { icon: Coins, title: 'Earn kreds', text: 'Collect kreds for approved activities.' },
           { icon: WalletCards, title: 'Track your wallet', text: 'Withdrawals open once secure payments are ready.' },
         ],
       }}

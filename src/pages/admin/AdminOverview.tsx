@@ -38,7 +38,7 @@ export default function AdminOverview() {
           </div>
           <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-6">
             <div className="text-sm font-semibold text-white/50">Reward reserve remaining</div>
-            <div className="mt-1 text-4xl font-extrabold">{o.reserveTokens.toLocaleString()} tokens</div>
+            <div className="mt-1 text-4xl font-extrabold">{o.reserveTokens.toLocaleString()} kreds</div>
             <div className="mt-1 text-sm text-white/45">≈ ₦{o.reserveNaira.toLocaleString()} left to fund rewards</div>
           </div>
         </>

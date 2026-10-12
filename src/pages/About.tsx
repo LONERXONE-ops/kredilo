@@ -9,7 +9,7 @@ export default function About() {
         <span className="inline-block rounded-full border border-white/25 px-4 py-1.5 text-sm font-bold">About</span>
         <h1 className="mt-5 text-[2.6rem] font-extrabold leading-[1.05] sm:text-6xl">About Kredilo</h1>
         <p className="mt-5 text-lg leading-relaxed text-white/65">
-          Kredilo is a task-to-earn platform built for users in Nigeria. You complete simple activities such as surveys, social tasks, content tasks and browser games, and earn tokens when your completion is verified.
+          Kredilo is a task-to-earn platform built for users in Nigeria. You complete simple activities such as surveys, social tasks, content tasks and browser games, and earn kreds when your completion is verified.
         </p>
         <p className="mt-4 text-lg leading-relaxed text-white/65">
           We want it to be honest: clear instructions, rewards shown before you start, visible progress, and plain rules about verification and withdrawals.
@@ -17,7 +17,7 @@ export default function About() {
         <div className="mt-8 rounded-3xl border border-white/15 bg-white/[0.04] p-5 sm:p-6">
           <h2 className="text-xl font-extrabold">Where we are today</h2>
           <p className="mt-2 leading-relaxed text-white/65">
-            Kredilo is a demo. The balances and tasks you see are sample data, no sponsors exist yet, and no real money is paid out. Withdrawals will open only after secure payments and funding checks are done.
+            Kredilo is a task-to-earn platform built for Nigeria. Complete tasks and games to earn kreds, and withdraw as Naira once withdrawals open on a set date.
           </p>
         </div>
         <div className="mt-8 flex flex-wrap gap-3">

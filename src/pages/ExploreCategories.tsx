@@ -24,7 +24,7 @@ export default function ExploreCategories() {
           <span className="inline-block rounded-full border border-white/25 px-4 py-1.5 text-sm font-bold">Task Categories</span>
           <h1 className="mt-5 text-[2.6rem] font-extrabold leading-[1.05] sm:text-6xl">Explore Task Categories</h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-white/60">
-            Choose from a variety of activities, complete the requirements, and earn tokens for approved work.
+            Choose from a variety of activities, complete the requirements, and earn kreds for approved work.
           </p>
         </div>
 
@@ -42,7 +42,7 @@ export default function ExploreCategories() {
                 <h2 className="mt-4 text-xl font-extrabold">{c.label}</h2>
                 <p className="mt-1 text-sm leading-relaxed text-white/55">{c.text}</p>
                 <span className="mt-4 inline-flex items-center gap-2 self-start rounded-full bg-white/10 px-3.5 py-2 text-sm font-bold">
-                  {count === 0 ? 'No demo tasks yet' : `${count} demo ${count === 1 ? 'task' : 'tasks'}`} <ArrowRight size={15} />
+                  {count === 0 ? 'No tasks yet' : `${count} ${count === 1 ? 'task' : 'tasks'}`} <ArrowRight size={15} />
                 </span>
               </Link>
             );

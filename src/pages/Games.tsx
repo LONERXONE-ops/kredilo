@@ -2,15 +2,15 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, Coins, FileText, Gamepad2, LayoutGrid, ListChecks, MousePointerClick, ShieldCheck, Wallet } from 'lucide-react';
 
 const games = [
-  { icon: Gamepad2, name: 'Snake', desc: 'Guide the snake, eat food and grow your score.', reward: 'Up to 50 tokens', to: '/games/snake' },
-  { icon: LayoutGrid, name: 'Memory Match', desc: 'Find matching pairs and complete the grid.', reward: 'Up to 50 tokens', to: '/games/memory' },
-  { icon: MousePointerClick, name: 'Reaction Test', desc: 'Click as fast as you can when the signal appears.', reward: 'Up to 30 tokens', to: '/games/reaction' },
-  { icon: ListChecks, name: 'Trivia Quiz', desc: 'Answer questions and test your knowledge.', reward: 'Up to 40 tokens', to: '/games/trivia' },
+  { icon: Gamepad2, name: 'Snake', desc: 'Guide the snake, eat food and grow your score.', reward: 'Up to 50 kreds', to: '/games/snake' },
+  { icon: LayoutGrid, name: 'Memory Match', desc: 'Find matching pairs and complete the grid.', reward: 'Up to 50 kreds', to: '/games/memory' },
+  { icon: MousePointerClick, name: 'Reaction Test', desc: 'Click as fast as you can when the signal appears.', reward: 'Up to 30 kreds', to: '/games/reaction' },
+  { icon: ListChecks, name: 'Trivia Quiz', desc: 'Answer questions and test your knowledge.', reward: 'Up to 40 kreds', to: '/games/trivia' },
 ];
 
 const why = [
   { icon: FileText, title: 'Clear Task Instructions', text: 'Know exactly what to do before you start.' },
-  { icon: ShieldCheck, title: 'Transparent Rewards', text: 'See the token amount and eligibility upfront.' },
+  { icon: ShieldCheck, title: 'Transparent Rewards', text: 'See the kred amount and eligibility upfront.' },
   { icon: CheckCircle2, title: 'Visible Progress', text: 'Track each task’s status.' },
   { icon: Coins, title: 'Trackable Token History', text: 'View your earnings and transactions anytime.' },
   { icon: Wallet, title: 'Clear Withdrawal Rules', text: 'Minimum amount and conditions shown up front. Withdrawals are not open yet.' },
@@ -26,7 +26,7 @@ export default function Games() {
             <span className="inline-block rounded-full border border-white/25 px-4 py-1.5 text-sm font-bold">Built-in Games</span>
             <h1 className="mt-5 text-[2.6rem] font-extrabold leading-[1.05] sm:text-6xl">Play Games, Earn Tokens.</h1>
             <p className="mt-5 max-w-md text-lg text-white/60">
-              Enjoy browser games directly on Kredilo. Rewards are only given for completions that pass server checks. Game rewards are demo-only for now.
+              Enjoy browser games directly on Kredilo. Rewards are only given for completions that pass server checks. Games are just for fun right now — they don’t pay kreds yet.
             </p>
             <Link to="/dashboard/games" className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-7 text-sm font-bold text-black hover:bg-white/90">
               Explore Games Hub <ArrowRight size={18} />
@@ -50,7 +50,7 @@ export default function Games() {
           <div>
             <span className="inline-block rounded-full border border-white/25 px-4 py-1.5 text-sm font-bold">Why Kredilo</span>
             <h2 className="mt-4 text-4xl font-extrabold leading-tight sm:text-5xl">More Than Just Tasks.</h2>
-            <p className="mt-4 max-w-md text-white/60">Kredilo aims to be simple and transparent about how you earn tokens.</p>
+            <p className="mt-4 max-w-md text-white/60">Kredilo aims to be simple and transparent about how you earn kreds.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {why.map((w) => (

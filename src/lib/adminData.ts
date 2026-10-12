@@ -4,7 +4,7 @@ export type Overview = {
   users: number; admins: number; liveTasks: number; pendingReviews: number;
   pendingPosts: number; openWithdrawals: number; reserveTokens: number; reserveNaira: number;
 };
-export type AdminUser = { id: string; email: string; role: string; status: string; emailVerified: boolean; balance: number; createdAt: string };
+export type AdminUser = { id: string; email: string; role: string; status: string; emailVerified: boolean; balance: number; createdAt: string; avatar: string | null };
 export type Funding = {
   rate: { tokens: number; naira: number };
   fundedTokens: number; fundedNaira: number; issuedTokens: number; issuedNaira: number;

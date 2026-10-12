@@ -27,7 +27,7 @@ export default function Contact() {
           </button>
           {sent && (
             <p role="status" className="rounded-2xl border border-white/15 bg-white/[0.05] px-4 py-3 text-sm text-white/80">
-              Demo mode: your message was not sent. Support will be connected once the backend and email are ready.
+              Support messaging is being set up — please check back soon.
             </p>
           )}
         </form>

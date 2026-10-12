@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Gamepad2, LayoutGrid, ListChecks, MousePointerClick } from 'lucide-react';
 
 const games = [
-  { icon: Gamepad2, name: 'Snake', path: '/games/snake', reward: 'Up to 50 tokens', desc: 'Guide the snake, eat food and grow your score.' },
-  { icon: LayoutGrid, name: 'Memory Match', path: '/games/memory', reward: 'Up to 50 tokens', desc: 'Find matching pairs and complete the grid.' },
-  { icon: MousePointerClick, name: 'Reaction Test', path: '/games/reaction', reward: 'Up to 30 tokens', desc: 'Tap as fast as you can when the signal appears.' },
-  { icon: ListChecks, name: 'Trivia Quiz', path: '/games/trivia', reward: 'Up to 40 tokens', desc: 'Answer questions and test your knowledge.' },
+  { icon: Gamepad2, name: 'Snake', path: '/games/snake', reward: 'Up to 50 kreds', desc: 'Guide the snake, eat food and grow your score.' },
+  { icon: LayoutGrid, name: 'Memory Match', path: '/games/memory', reward: 'Up to 50 kreds', desc: 'Find matching pairs and complete the grid.' },
+  { icon: MousePointerClick, name: 'Reaction Test', path: '/games/reaction', reward: 'Up to 30 kreds', desc: 'Tap as fast as you can when the signal appears.' },
+  { icon: ListChecks, name: 'Trivia Quiz', path: '/games/trivia', reward: 'Up to 40 kreds', desc: 'Answer questions and test your knowledge.' },
 ];
 
 export default function GamesHub() {
@@ -14,7 +14,7 @@ export default function GamesHub() {
       <div>
         <h1 className="text-4xl font-extrabold">Games</h1>
         <p className="mt-1 max-w-xl text-white/55">
-          Play built-in browser games. Rewards are demo-only for now. Real rewards will need server-side verification of every completion.
+          Play built-in browser games. Games are just for fun right now — they don’t pay kreds yet.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

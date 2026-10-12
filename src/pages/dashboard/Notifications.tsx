@@ -1,20 +1,53 @@
+import { useEffect, useState } from 'react';
+import { Bell, CheckCheck } from 'lucide-react';
+import { listNotifications, markRead, timeAgo } from '../../lib/notifications';
+import type { Notification } from '../../lib/notifications';
+
 export default function Notifications() {
-  const items = [
-    { title: 'Your task has been approved', time: '3h ago', unread: true },
-    { title: 'New daily challenge available', time: '5h ago', unread: true },
-    { title: 'Platform update', time: '1d ago', unread: false },
-  ];
+  const [items, setItems] = useState<Notification[] | null>(null);
+  const [error, setError] = useState('');
+
+  const load = () => listNotifications().then((r) => setItems(r.notifications)).catch((e) => setError(e instanceof Error ? e.message : 'Could not load notifications.'));
+  useEffect(() => {
+    void load();
+    markRead().then(() => window.dispatchEvent(new Event('notifications-read'))).catch(() => { /* ignore */ });
+  }, []);
+
+  const markAll = async () => {
+    try { await markRead(); setItems((prev) => prev?.map((n) => ({ ...n, read: true })) ?? prev); window.dispatchEvent(new Event('notifications-read')); } catch { /* ignore */ }
+  };
+
+  const hasUnread = items?.some((n) => !n.read);
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Notifications</h1>
+    <div className="mx-auto max-w-2xl">
+      <div className="mb-5 flex items-center justify-between">
+        <h1 className="text-4xl font-extrabold">Notifications</h1>
+        {hasUnread && (
+          <button onClick={markAll} className="inline-flex items-center gap-1.5 text-sm font-bold text-white/60 hover:text-white">
+            <CheckCheck size={16} /> Mark all read
+          </button>
+        )}
+      </div>
+
+      {error && <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+      {!items && !error && <p className="rounded-3xl border border-white/10 p-8 text-center text-sm text-white/45">Loading...</p>}
+
+      {items && items.length === 0 && (
+        <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-10 text-center">
+          <Bell size={28} className="mx-auto text-white/30" />
+          <p className="mt-3 text-sm text-white/50">No notifications yet. We’ll let you know when a task is approved or a withdrawal is paid.</p>
+        </div>
+      )}
+
       <div className="space-y-3">
-        {items.map((n, i) => (
-          <div key={i} className={`p-4 border border-white/10 rounded-xl bg-[#111] flex items-start gap-3 ${n.unread ? 'border-l-2 border-l-white' : ''}`}>
-            <div className={`w-2 h-2 rounded-full mt-2 ${n.unread ? 'bg-white' : 'bg-white/20'}`} />
-            <div>
-              <div className="font-medium text-sm">{n.title}</div>
-              <div className="text-xs text-white/40">{n.time}</div>
+        {items?.map((n) => (
+          <div key={n.id} className={`flex items-start gap-3 rounded-3xl border p-4 ${n.read ? 'border-white/10 bg-[#0e0e0e]' : 'border-white/20 bg-white/[0.04]'}`}>
+            <div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? 'bg-white/20' : 'bg-emerald-400'}`} />
+            <div className="min-w-0">
+              <div className="font-bold">{n.title}</div>
+              {n.body && <div className="mt-0.5 text-sm text-white/60">{n.body}</div>}
+              <div className="mt-1 text-xs text-white/40">{timeAgo(n.createdAt)}</div>
             </div>
           </div>
         ))}

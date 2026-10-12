@@ -23,7 +23,7 @@ export default function FeaturedTasks() {
             <span className="inline-block rounded-full border border-white/25 px-4 py-1.5 text-sm font-bold">Task Marketplace</span>
             <h1 className="mt-4 text-[2.6rem] font-extrabold leading-[1.05] sm:text-6xl">Featured Tasks</h1>
             <p className="mt-4 max-w-md text-lg text-white/60">
-              Complete simple tasks and earn tokens. These are demo tasks; no sponsored tasks exist yet.
+              Complete simple tasks and earn kreds.
             </p>
           </div>
           <div className="space-y-3">
@@ -60,7 +60,7 @@ export default function FeaturedTasks() {
                   </div>
                 </div>
                 <div className="mt-4 flex items-center gap-5 text-sm font-bold">
-                  <span className="flex items-center gap-1.5"><Coins size={17} /> {t.reward} tokens</span>
+                  <span className="flex items-center gap-1.5"><Coins size={17} /> {t.reward} kreds</span>
                   <span className="flex items-center gap-1.5 text-white/70"><Clock size={16} /> {t.timeMinutes} mins</span>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">

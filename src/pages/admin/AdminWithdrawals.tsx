@@ -46,7 +46,7 @@ export default function AdminWithdrawals() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="text-2xl font-extrabold">₦{w.amountNaira.toLocaleString()}</div>
-                <div className="text-xs text-white/45">{w.amountTokens.toLocaleString()} tokens · {w.email}</div>
+                <div className="text-xs text-white/45">{w.amountTokens.toLocaleString()} kreds · {w.email}</div>
               </div>
               <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${w.status === 'paid' ? 'bg-emerald-500/15 text-emerald-400' : w.status === 'cancelled' ? 'bg-red-500/15 text-red-300' : 'bg-amber-400/15 text-amber-300'}`}>{wStatusLabel[w.status]}</span>
             </div>
@@ -62,7 +62,7 @@ export default function AdminWithdrawals() {
               cancelId === w.id ? (
                 <div className="mt-4 space-y-2">
                   <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for cancelling" className="h-11 w-full rounded-full border border-white/15 bg-black/40 px-4 text-sm outline-none focus:border-white/40" />
-                  <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={ret} onChange={(e) => setRet(e.target.checked)} className="h-4 w-4 accent-white" /> Return the tokens to the user (leave off to void them)</label>
+                  <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={ret} onChange={(e) => setRet(e.target.checked)} className="h-4 w-4 accent-white" /> Return the kreds to the user (leave off to void them)</label>
                   <div className="flex gap-2">
                     <button disabled={!reason || busy === w.id} onClick={() => act(w.id, () => cancelWithdrawal(w.id, reason, ret))} className="min-h-11 flex-1 rounded-full bg-red-500/20 text-sm font-bold text-red-300 disabled:opacity-50">Confirm cancel</button>
                     <button onClick={() => { setCancelId(null); setReason(''); setRet(false); }} className="min-h-11 flex-1 rounded-full border border-white/20 text-sm font-bold">Back</button>

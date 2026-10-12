@@ -34,7 +34,7 @@ export default function AdminFunding() {
               </div>
             ))}
           </div>
-          <p className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-5 text-sm text-white/60">Rate: {f.rate.tokens} tokens = ₦{f.rate.naira}.</p>
+          <p className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-5 text-sm text-white/60">Rate: {f.rate.tokens} kreds = ₦{f.rate.naira}.</p>
         </>
       )}
     </div>

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Check, Coins, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { approveSubmission, listPendingSubmissions, rejectSubmission } from '../../lib/admin';
 import type { PendingSubmission } from '../../lib/admin';
+import { Kred } from '../../components/Kred';
 
 export default function AdminSubmissions() {
   const [subs, setSubs] = useState<PendingSubmission[] | null>(null);
@@ -44,7 +45,7 @@ export default function AdminSubmissions() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h3 className="font-extrabold">{s.title}</h3>
-                <div className="mt-1 flex items-center gap-1.5 text-sm font-bold"><Coins size={15} /> {s.reward} tokens</div>
+                <div className="mt-1 flex items-center gap-1.5 text-sm font-bold text-emerald-400"><Kred size={14} /> {s.reward} kreds</div>
                 {s.handle && <div className="mt-1 text-sm text-white/60">Handle: <span className="font-semibold text-white">{s.handle}</span></div>}
                 {s.proofText && <div className="mt-1 break-all text-sm text-white/60">Proof: {s.proofText}</div>}
                 {s.submittedAt && <div className="mt-1 text-xs text-white/40">{new Date(s.submittedAt).toLocaleString()}</div>}

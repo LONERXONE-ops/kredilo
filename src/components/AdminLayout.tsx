@@ -69,17 +69,13 @@ export function AdminLayout() {
         </nav>
       </header>
 
-      <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6 lg:px-8">
-        <div className="flex gap-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
-          <TriangleAlert size={18} className="mt-0.5 shrink-0" />
-          <p>
-            Screens only hide what your role should not see. The server decides what you are allowed to do on every request.
-          </p>
-        </div>
-      </div>
-
       <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-        {allowed ? <Outlet /> : <Denied text="Your role does not include this section." to="/admin" action="Back to overview" />}
+        <p className="mb-5 flex items-center gap-2 text-xs text-white/35">
+          <TriangleAlert size={13} className="shrink-0" /> The server enforces every permission — screens only hide what your role can’t use.
+        </p>
+        <div className="animate-[fadeup_320ms_ease-out]">
+          {allowed ? <Outlet /> : <Denied text="Your role does not include this section." to="/admin" action="Back to overview" />}
+        </div>
       </main>
     </div>
   );

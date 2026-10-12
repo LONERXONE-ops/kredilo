@@ -6,11 +6,14 @@ import { taskRoutes } from './tasks.ts';
 import { postRoutes } from './posts.ts';
 import { withdrawalRoutes } from './withdrawals.ts';
 import { adminDataRoutes } from './adminData.ts';
+import { avatarRoutes } from './avatar.ts';
+import { notificationRoutes } from './notifications.ts';
 import { audit } from './db.ts';
 import type { Db } from './db.ts';
 import {
   DUMMY_HASH, SESSION_COOKIE, SESSION_DAYS, consumeEmailToken, createEmailToken, createSession, deleteSession,
-  deleteUserSessions, hashPassword, newId, passwordProblem, peekEmailToken, publicUser, sessionUser, validEmail, verifyPassword,
+  autoUsername, deleteUserSessions, ensureReferralCode, findByReferralCode, hashPassword, newId, passwordProblem,
+  peekEmailToken, publicUser, REFERRAL_BONUS, sessionUser, usernameTaken, validEmail, validUsername, verifyPassword,
 } from './auth.ts';
 import type { UserRow } from './auth.ts';
 import { HttpError, cookie, limited, parseCookies, readJson, sendJson } from './http.ts';
@@ -62,12 +65,20 @@ export function createApp(db: Db, o: AppOptions): Server {
     if (limited(`signup:${c.ip}`, 10, 3_600_000)) throw tooMany();
     const email = validEmail(c.body.email);
     if (!email) throw new HttpError(400, 'Enter a valid email address.');
+    const provided = c.body.username !== undefined && c.body.username !== '';
+    const chosen = provided ? validUsername(c.body.username) : null;
+    if (provided && !chosen) throw new HttpError(400, 'Username must be 3-20 characters: lowercase letters, numbers or underscores.');
     const problem = passwordProblem(c.body.password, email);
     if (problem) throw new HttpError(400, problem);
     if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) throw new HttpError(409, 'An account with this email already exists.');
+    if (chosen && usernameTaken(db, chosen)) throw new HttpError(409, 'That username is already taken.');
+    const username = chosen ?? autoUsername(db, email);
+    const referrer = c.body.referralCode ? findByReferralCode(db, c.body.referralCode as string) : undefined;
     const id = newId();
-    db.prepare('INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)').run(id, email, await hashPassword(c.body.password as string));
-    audit(db, id, 'user.signup', id);
+    db.prepare('INSERT INTO users (id, email, username, password_hash, referred_by) VALUES (?, ?, ?, ?, ?)')
+      .run(id, email, username, await hashPassword(c.body.password as string), referrer?.id ?? null);
+    ensureReferralCode(db, id);
+    audit(db, id, 'user.signup', id, referrer ? { referredBy: referrer.id } : undefined);
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow;
     sendVerify(user);
     setSession(c, createSession(db, id));
@@ -142,12 +153,33 @@ export function createApp(db: Db, o: AppOptions): Server {
     return { ok: true };
   });
 
+  route('POST', '/api/auth/username', async (c) => {
+    const u = requireUser(c);
+    if (limited(`username:${u.id}`, 5, 3_600_000)) throw tooMany();
+    const username = validUsername(c.body.username);
+    if (!username) throw new HttpError(400, 'Username must be 3-20 characters: lowercase letters, numbers or underscores.');
+    if (usernameTaken(db, username, u.id)) throw new HttpError(409, 'That username is already taken.');
+    db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, u.id);
+    audit(db, u.id, 'user.username', u.id, { username });
+    return { user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(u.id) as UserRow) };
+  });
+
+  route('GET', '/api/referral', async (c) => {
+    const u = requireUser(c);
+    const code = ensureReferralCode(db, u.id);
+    const count = (db.prepare('SELECT COUNT(*) AS n FROM users WHERE referred_by = ?').get(u.id) as { n: number }).n;
+    const credited = (db.prepare('SELECT COUNT(*) AS n FROM users WHERE referred_by = ? AND referral_bonus_paid = 1').get(u.id) as { n: number }).n;
+    return { code, count, credited, earned: credited * REFERRAL_BONUS, bonus: REFERRAL_BONUS };
+  });
+
   adminRoutes({ db, route, requireUser, options: o });
   walletRoutes({ db, route, requireUser });
   taskRoutes({ db, route, requireUser });
   postRoutes({ db, route, requireUser });
   withdrawalRoutes({ db, route, requireUser });
   adminDataRoutes({ db, route, requireUser });
+  avatarRoutes({ db, route, requireUser });
+  notificationRoutes({ db, route, requireUser });
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     try {
@@ -164,7 +196,7 @@ export function createApp(db: Db, o: AppOptions): Server {
         res,
         ip: req.socket.remoteAddress ?? 'unknown',
         cookies: parseCookies(req.headers.cookie),
-        body: await readJson(req, url.pathname === '/api/tasks/submit' ? 8_000_000 : 16_384),
+        body: await readJson(req, (url.pathname === '/api/tasks/submit' || url.pathname === '/api/avatar' || url.pathname === '/api/post/create' || url.pathname === '/api/admin/tasks') ? 8_000_000 : 16_384),
         query: Object.fromEntries(url.searchParams),
       };
       const data = await h(c);

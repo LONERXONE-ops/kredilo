@@ -4,6 +4,7 @@ import type { UserRow } from './auth.ts';
 import { HttpError } from './http.ts';
 import type { Ctx } from './http.ts';
 import { balance, currentSettings, reserveAvailable, tokensToNaira } from './ledger.ts';
+import { avatarUrl } from './uploads.ts';
 import { deleteUserSessions } from './auth.ts';
 
 type Deps = {
@@ -48,12 +49,12 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
     if (u.role === 'reviewer') throw new HttpError(403, 'Not allowed.');
     const q = str(c.query.q, 80).toLowerCase();
     const rows = db
-      .prepare(`SELECT id, email, role, status, email_verified_at, created_at FROM users ${q ? 'WHERE LOWER(email) LIKE ?' : ''} ORDER BY created_at DESC LIMIT 200`)
-      .all(...(q ? [`%${q}%`] : [])) as { id: string; email: string; role: string; status: string; email_verified_at: string | null; created_at: string }[];
+      .prepare(`SELECT id, email, role, status, email_verified_at, created_at, avatar_ref FROM users ${q ? 'WHERE LOWER(email) LIKE ?' : ''} ORDER BY created_at DESC LIMIT 200`)
+      .all(...(q ? [`%${q}%`] : [])) as { id: string; email: string; role: string; status: string; email_verified_at: string | null; created_at: string; avatar_ref: string | null }[];
     return {
       users: rows.map((r) => ({
         id: r.id, email: r.email, role: r.role, status: r.status,
-        emailVerified: r.email_verified_at !== null, balance: balance(db, r.id), createdAt: r.created_at,
+        emailVerified: r.email_verified_at !== null, balance: balance(db, r.id), createdAt: r.created_at, avatar: avatarUrl(r.avatar_ref),
       })),
     };
   });

@@ -31,3 +31,22 @@ export const defaultMail: AppOptions['sendMail'] = (m) => {
   // No email provider is connected yet. In development the message is printed here.
   console.log(`\n[mail] to: ${m.to}\n[mail] subject: ${m.subject}\n${m.text}\n`);
 };
+
+// Sends real email through Resend when RESEND_API_KEY is set; otherwise falls back to console.
+// Fire-and-forget: callers don't await it, so a slow/failed send never blocks a request.
+export function makeMailer(): AppOptions['sendMail'] {
+  const key = process.env.RESEND_API_KEY;
+  const from = process.env.MAIL_FROM ?? 'Kredilo <onboarding@resend.dev>';
+  if (!key) return defaultMail;
+  return (m) => {
+    fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to: m.to, subject: m.subject, text: m.text }),
+    })
+      .then(async (res) => {
+        if (!res.ok) console.error(`[mail] resend ${res.status}: ${await res.text()}`);
+      })
+      .catch((e) => console.error('[mail] resend error', e));
+  };
+}

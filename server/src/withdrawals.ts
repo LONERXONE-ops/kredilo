@@ -6,6 +6,7 @@ import { HttpError } from './http.ts';
 import type { Ctx } from './http.ts';
 import { balance, currentSettings, holdForWithdrawal, LedgerError, releaseWithdrawal, tokensToNaira } from './ledger.ts';
 import { decrypt, encrypt } from './crypto.ts';
+import { notify } from './notifications.ts';
 
 type Deps = {
   db: Db;
@@ -140,6 +141,11 @@ export function withdrawalRoutes({ db, route, requireUser }: Deps) {
     if (w.status !== 'requested' && w.status !== 'processing') throw new HttpError(409, 'This request is already settled.');
     db.prepare("UPDATE withdrawals SET status = 'paid', transfer_ref = ?, handled_by = ?, updated_at = ? WHERE id = ?").run(ref, admin.id, now(), w.id);
     audit(db, admin.id, 'withdrawal.paid', w.id, { ref });
+    notify(db, w.user_id, {
+      type: 'withdrawal_paid', title: 'Withdrawal paid 💸',
+      body: `₦${w.amount_naira.toLocaleString()} has been sent to your ${w.bank_name} account. Ref: ${ref}.`,
+      refType: 'withdrawal', refId: w.id,
+    });
     return { ok: true };
   });
 
@@ -154,6 +160,11 @@ export function withdrawalRoutes({ db, route, requireUser }: Deps) {
     db.prepare("UPDATE withdrawals SET status = 'cancelled', admin_note = ?, handled_by = ?, updated_at = ? WHERE id = ?").run(reason, admin.id, now(), w.id);
     if (returnTokens) releaseWithdrawal(db, w.user_id, w.amount_tokens, w.id, admin.id);
     audit(db, admin.id, 'withdrawal.cancel', w.id, { returnTokens, reason });
+    notify(db, w.user_id, {
+      type: 'withdrawal_cancelled', title: 'Withdrawal cancelled',
+      body: `Your withdrawal was cancelled: ${reason}${returnTokens ? ' Your tokens have been returned.' : ''}`,
+      refType: 'withdrawal', refId: w.id,
+    });
     return { ok: true };
   });
 

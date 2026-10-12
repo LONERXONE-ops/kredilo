@@ -1,12 +1,28 @@
-import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Bell } from 'lucide-react';
 import { Logo } from './Logo';
 import { BottomDock } from './BottomDock';
 import { useAuth } from '../lib/auth';
+import { Avatar } from './Avatar';
+import { getUnreadCount } from '../lib/notifications';
+
+// The four sections that live in the bottom dock. Any other screen shows a back button instead.
+const DOCK_ROUTES = ['/dashboard', '/dashboard/wallet', '/dashboard/games', '/dashboard/profile'];
 
 export function DashboardLayout() {
   const { user, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    getUnreadCount().then(setUnread).catch(() => { /* ignore */ });
+    const clear = () => setUnread(0);
+    window.addEventListener('notifications-read', clear);
+    return () => window.removeEventListener('notifications-read', clear);
+  }, [user, location.pathname]);
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center bg-[#050505] text-sm text-white/50">Loading...</div>;
@@ -15,23 +31,38 @@ export function DashboardLayout() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  const name = user.email.split('@')[0];
+  const name = user.username ?? user.email.split('@')[0];
+  const isDock = DOCK_ROUTES.includes(location.pathname);
 
   return (
     <div className="relative min-h-screen bg-[#050505] text-white">
       <div className="light-beam pointer-events-none absolute inset-x-0 top-0 h-[28rem] opacity-60" />
 
       <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#050505]/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to="/dashboard" aria-label="Kredilo dashboard">
-            <Logo className="h-6 w-auto text-white" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link to="/dashboard/notifications" aria-label="Notifications" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10">
-              <Bell size={20} />
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
+          {isDock ? (
+            <Link to="/dashboard" aria-label="Kredilo dashboard" className="transition active:scale-95">
+              <Logo className="h-6 w-auto text-white" />
             </Link>
-            <Link to="/dashboard/profile" className="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-2 hover:bg-white/10">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm font-extrabold">{name[0]?.toUpperCase()}</span>
+          ) : (
+            <button
+              onClick={() => navigate(-1)}
+              className="-ml-2 flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold text-white/80 transition hover:bg-white/10 hover:text-white active:scale-95"
+            >
+              <ArrowLeft size={18} /> Back
+            </button>
+          )}
+          <div className="flex items-center gap-2">
+            <Link to="/dashboard/notifications" aria-label="Notifications" className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-white/10 active:scale-90">
+              <Bell size={20} />
+              {unread > 0 && (
+                <span className="absolute right-1 top-1 flex h-4 min-w-4 animate-[kpop_240ms_ease-out] items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-bold text-black">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
+            </Link>
+            <Link to="/dashboard/profile" className="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10 active:scale-95">
+              <Avatar src={user.avatar} name={name} size={36} />
               <span className="hidden text-left leading-tight sm:block">
                 <span className="block text-sm font-bold">{name}</span>
                 <span className="block text-[11px] text-white/40">ID: {user.id.slice(0, 8)}</span>
@@ -39,16 +70,13 @@ export function DashboardLayout() {
             </Link>
           </div>
         </div>
-        <div className="border-t border-white/[0.06] bg-white/[0.04] px-4 py-1.5 text-center text-[11px] font-semibold text-white/60">
-          Demo mode: balances and tasks are sample data. No real earnings or payments.
-        </div>
       </header>
 
-      <main className="relative mx-auto w-full max-w-6xl px-4 pb-36 pt-6 sm:px-6 lg:px-8">
+      <main className={`relative mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8 ${isDock ? 'pb-36' : 'pb-16'} animate-[fadeup_320ms_ease-out]`}>
         <Outlet />
       </main>
 
-      <BottomDock />
+      {isDock && <BottomDock />}
     </div>
   );
 }

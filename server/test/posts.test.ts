@@ -11,13 +11,15 @@ async function makePost(t: any, cookie: string, over: Record<string, unknown> = 
   return t.call('POST', '/api/post/create', { title: 'Follow me', description: 'Follow my page', category: 'Social Media', days: 1, maxCompletions: 3, needsHandle: true, photo: PNG, receipt: RCPT, ...over }, cookie);
 }
 
-test('pricing is exposed to signed-in users and lists both durations', async () => {
+test('pricing is exposed to signed-in users as a daily rate', async () => {
   const t = await setup();
   const u = await t.makeUser('u@example.com');
   assert.equal((await t.call('GET', '/api/post/pricing')).status, 401);
   const r = await t.call('GET', '/api/post/pricing', undefined, u);
   assert.equal(r.status, 200);
-  assert.deepEqual(r.json.options.map((o: any) => [o.days, o.price_naira, o.reward_tokens]), [[1, 1000, 30], [2, 2000, 60]]);
+  assert.equal(r.json.perDayNaira, 1000);
+  assert.equal(r.json.perDayTokens, 30);
+  assert.equal(r.json.maxDays, 10);
   t.close();
 });
 
@@ -40,7 +42,7 @@ test('bad posts are rejected: missing photo, missing receipt, bad duration', asy
   const poster = await t.makeUser('poster@example.com');
   assert.equal((await makePost(t, poster, { photo: undefined })).status, 400);
   assert.equal((await makePost(t, poster, { receipt: undefined })).status, 400);
-  assert.equal((await makePost(t, poster, { days: 5 })).status, 400);
+  assert.equal((await makePost(t, poster, { days: 11 })).status, 400);
   assert.equal((await makePost(t, poster, { maxCompletions: 0 })).status, 400);
   t.close();
 });

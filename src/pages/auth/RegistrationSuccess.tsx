@@ -3,10 +3,10 @@ import { ArrowRight, Check, ClipboardCheck, Coins, Gamepad2, WalletCards } from 
 import { Logo } from '../../components/Logo';
 
 const next = [
-  { icon: ClipboardCheck, title: 'Complete Tasks', text: 'Follow the instructions and earn tokens.' },
+  { icon: ClipboardCheck, title: 'Complete Tasks', text: 'Follow the instructions and earn kreds.' },
   { icon: Gamepad2, title: 'Play Games', text: 'Enjoy browser games and daily challenges.' },
-  { icon: Coins, title: 'Track Your Earnings', text: 'View your token balance and transaction history.' },
-  { icon: WalletCards, title: 'Withdrawals', text: 'Open once secure payments are ready. Not available yet.' },
+  { icon: Coins, title: 'Track Your Earnings', text: 'View your kred balance and transaction history.' },
+  { icon: WalletCards, title: 'Withdrawals', text: 'Open on a date set by Kredilo.' },
 ];
 
 export default function RegistrationSuccess() {
@@ -20,7 +20,7 @@ export default function RegistrationSuccess() {
           </div>
           <h1 className="mt-6 text-4xl font-extrabold">Welcome to Kredilo!</h1>
           <p className="mt-1 text-lg font-bold">Your account has been created.</p>
-          <p className="mt-3 max-w-xs text-white/60">You’re all set to start completing tasks, playing games, and earning tokens.</p>
+          <p className="mt-3 max-w-xs text-white/60">You’re all set to start completing tasks, playing games, and earning kreds.</p>
           <Link to="/dashboard" className="mt-8 flex min-h-12 w-full max-w-sm items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90">
             Continue to Dashboard <ArrowRight size={18} />
           </Link>

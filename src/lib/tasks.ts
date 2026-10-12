@@ -3,7 +3,7 @@ import { apiRequest } from './auth';
 export type Task = {
   id: string; kind: 'admin' | 'posted'; title: string; description: string; category: string;
   reward: number; proofType: 'screenshot' | 'link' | 'text' | 'none'; needsHandle: boolean;
-  photo: string | null; status: string; remaining: number; maxCompletions: number; approvedCount: number;
+  photo: string | null; link: string | null; status: string; remaining: number; maxCompletions: number; approvedCount: number;
 };
 export type MySubmission = {
   id: string; taskId: string; title: string; reward: number; proofType: string;

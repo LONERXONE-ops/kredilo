@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { getUsers, setUserStatus } from '../../lib/adminData';
 import type { AdminUser } from '../../lib/adminData';
 import { useAuth } from '../../lib/auth';
+import { Avatar } from '../../components/Avatar';
 
 export default function AdminUsers() {
   const { user } = useAuth();
@@ -36,13 +37,16 @@ export default function AdminUsers() {
       <div className="space-y-2">
         {users?.map((u) => (
           <div key={u.id} className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/10 bg-[#0e0e0e] p-4">
-            <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-3">
+              <Avatar src={u.avatar} name={u.email} size={40} />
+              <div className="min-w-0">
               <div className="truncate font-bold">{u.email}</div>
               <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-white/45">
                 <span>{u.role === 'user' ? 'member' : u.role}</span>
-                <span>· {u.balance.toLocaleString()} tokens</span>
+                <span>· {u.balance.toLocaleString()} kreds</span>
                 {u.emailVerified ? <span className="text-emerald-400">· verified</span> : <span className="text-amber-300">· unverified</span>}
                 {u.status === 'suspended' && <span className="text-red-400">· suspended</span>}
+              </div>
               </div>
             </div>
             {user?.role === 'owner' && u.role !== 'owner' && (

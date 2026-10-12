@@ -12,7 +12,7 @@ export function GameShell({ title, goal, children }: { title: string; goal: stri
       <p className="mt-1 text-white/60">{goal}</p>
       <div className="mt-6">{children}</div>
       <p className="mt-6 text-center text-xs leading-relaxed text-white/40">
-        Demo mode: no tokens are issued. In the real version, rewards are only given after the server verifies a completion.
+        Games are just for fun right now — they don’t pay kreds yet.
       </p>
     </div>
   );
