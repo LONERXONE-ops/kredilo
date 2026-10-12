@@ -22,7 +22,7 @@ export default function FAQ() {
       <div className="light-beam pointer-events-none absolute inset-y-0 right-0 w-full lg:w-[60%]" />
       <div className="relative mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-16">
         <div>
-          <span className="inline-block rounded-full border border-white/25 px-4 py-1.5 text-sm font-bold">Frequently Asked Questions</span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-1.5 text-sm font-bold text-emerald-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Frequently Asked Questions</span>
           <h1 className="mt-5 text-[2.6rem] font-extrabold leading-[1.05] sm:text-6xl">Got Questions? We’ve Got Answers.</h1>
           <p className="mt-5 max-w-md text-lg text-white/60">
             Quick answers about earning kreds, task verification, withdrawals and account security.
@@ -33,12 +33,12 @@ export default function FAQ() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search FAQs..."
-              className="h-14 w-full rounded-full border border-white/20 bg-black/40 pl-12 pr-4 text-sm outline-none placeholder:text-white/35 focus:border-white/50"
+              className="h-14 w-full rounded-full border border-white/20 bg-black/40 pl-12 pr-4 text-sm outline-none transition placeholder:text-white/35 focus:border-emerald-400/50"
             />
           </div>
           <div className="mt-5 flex flex-col gap-4 rounded-[1.75rem] border border-white/15 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10"><Headphones size={26} /></span>
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300"><Headphones size={26} /></span>
               <div>
                 <div className="text-lg font-extrabold">Still need help?</div>
                 <div className="text-sm text-white/55">Send us a message.</div>
@@ -54,13 +54,13 @@ export default function FAQ() {
           {shown.map((f) => {
             const isOpen = open === f.i;
             return (
-              <div key={f.q} className="rounded-3xl border border-white/15 bg-white/[0.02]">
+              <div key={f.q} className={`rounded-3xl border bg-white/[0.02] transition ${isOpen ? 'border-emerald-400/25' : 'border-white/15'}`}>
                 <button
                   onClick={() => setOpen(isOpen ? null : f.i)}
                   aria-expanded={isOpen}
                   className="flex min-h-16 w-full items-center gap-4 px-4 py-3 text-left"
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10"><f.icon size={20} /></span>
+                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition ${isOpen ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/10'}`}><f.icon size={20} /></span>
                   <span className="flex-1 font-bold">{f.q}</span>
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10">{isOpen ? <Minus size={18} /> : <Plus size={18} />}</span>
                 </button>

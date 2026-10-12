@@ -90,7 +90,13 @@ export function createApp(db: Db, o: AppOptions): Server {
     if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) throw new HttpError(409, 'An account with this email already exists.');
     if (chosen && usernameTaken(db, chosen)) throw new HttpError(409, 'That username is already taken.');
     const username = chosen ?? autoUsername(db, email);
-    const referrer = c.body.referralCode ? findByReferralCode(db, c.body.referralCode as string) : undefined;
+    // Referral is optional — but if a code IS entered, it must be a real one.
+    const refRaw = typeof c.body.referralCode === 'string' ? c.body.referralCode.trim() : '';
+    let referrer: UserRow | undefined;
+    if (refRaw) {
+      referrer = findByReferralCode(db, refRaw);
+      if (!referrer) throw new HttpError(400, 'That referral code isn’t valid. Leave it blank if no one invited you.');
+    }
     const id = newId();
     db.prepare('INSERT INTO users (id, email, username, password_hash, referred_by) VALUES (?, ?, ?, ?, ?)')
       .run(id, email, username, await hashPassword(c.body.password as string), referrer?.id ?? null);

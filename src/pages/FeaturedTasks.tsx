@@ -20,7 +20,7 @@ export default function FeaturedTasks() {
       <div className="relative mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="grid items-end gap-6 lg:grid-cols-2">
           <div>
-            <span className="inline-block rounded-full border border-white/25 px-4 py-1.5 text-sm font-bold">Task Marketplace</span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-1.5 text-sm font-bold text-emerald-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Task Marketplace</span>
             <h1 className="mt-4 text-[2.6rem] font-extrabold leading-[1.05] sm:text-6xl">Featured Tasks</h1>
             <p className="mt-4 max-w-md text-lg text-white/60">
               Complete simple tasks and earn kreds.
@@ -33,7 +33,7 @@ export default function FeaturedTasks() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search tasks..."
-                className="h-14 w-full rounded-full border border-white/20 bg-black/40 pl-12 pr-4 text-sm outline-none placeholder:text-white/35 focus:border-white/50"
+                className="h-14 w-full rounded-full border border-white/20 bg-black/40 pl-12 pr-4 text-sm outline-none transition placeholder:text-white/35 focus:border-emerald-400/50"
               />
             </div>
             <select
@@ -60,7 +60,7 @@ export default function FeaturedTasks() {
                   </div>
                 </div>
                 <div className="mt-4 flex items-center gap-5 text-sm font-bold">
-                  <span className="flex items-center gap-1.5"><Coins size={17} /> {t.reward} kreds</span>
+                  <span className="flex items-center gap-1.5 text-emerald-400"><Coins size={17} /> {t.reward} kreds</span>
                   <span className="flex items-center gap-1.5 text-white/70"><Clock size={16} /> {t.timeMinutes} mins</span>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">

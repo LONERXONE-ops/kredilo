@@ -16,7 +16,7 @@ export default function HowItWorks() {
       <div className="light-beam pointer-events-none absolute inset-y-0 right-0 w-full lg:w-[60%]" />
       <div className="relative mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-block rounded-full border border-white/25 px-4 py-1.5 text-sm font-bold">How It Works</span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-1.5 text-sm font-bold text-emerald-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> How It Works</span>
           <h1 className="mt-5 text-[2.6rem] font-extrabold leading-[1.05] sm:text-6xl">Simple Steps to Earn with Kredilo.</h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-white/60">
             Getting started is easy. Follow these steps to complete tasks and play games for kreds.
@@ -27,16 +27,16 @@ export default function HowItWorks() {
           {steps.map((s, i) => (
             <li key={s.title} className="flex flex-col items-center rounded-[1.75rem] border border-white/15 bg-white/[0.02] px-5 py-7 text-center">
               <span className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10"><s.icon size={34} strokeWidth={1.6} /></span>
-              <span className="mt-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-sm font-extrabold">{i + 1}</span>
+              <span className="mt-4 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/15 text-sm font-extrabold text-emerald-300">{i + 1}</span>
               <h2 className="mt-3 text-lg font-extrabold leading-snug">{s.title}</h2>
               <p className="mt-2 text-sm leading-relaxed text-white/55">{s.text}</p>
             </li>
           ))}
         </ol>
 
-        <div className="mt-6 flex flex-col items-start gap-5 rounded-[1.75rem] border border-white/15 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="mt-6 flex flex-col items-start gap-5 rounded-[1.75rem] border border-emerald-400/15 bg-gradient-to-br from-emerald-500/[0.10] to-transparent p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div className="flex items-center gap-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10"><Rocket size={26} /></span>
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300"><Rocket size={26} /></span>
             <div>
               <div className="text-lg font-extrabold">Ready to get started?</div>
               <div className="text-sm text-white/55">Create your account and begin earning eligible kreds.</div>

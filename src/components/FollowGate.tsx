@@ -11,6 +11,7 @@ const LABELS: Record<string, string> = { whatsapp: 'WhatsApp', x: 'X', instagram
 
 export function FollowGate({ onDone }: { onDone: () => void }) {
   const [status, setStatus] = useState<FollowStatus | null>(null);
+  const [opened, setOpened] = useState<string[]>([]); // platforms whose Follow link has been visited
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
 
@@ -27,6 +28,7 @@ export function FollowGate({ onDone }: { onDone: () => void }) {
     finally { setBusy(''); }
   };
 
+  const markOpened = (p: string) => setOpened((o) => (o.includes(p) ? o : [...o, p]));
   const all = status.platforms.every((p) => status.claimed.includes(p));
 
   return (
@@ -39,26 +41,35 @@ export function FollowGate({ onDone }: { onDone: () => void }) {
         {status.platforms.map((p) => {
           const done = status.claimed.includes(p);
           const url = socialUrl(p);
+          // Claim only unlocks once they've actually opened the social page (or if no link is set).
+          const canClaim = opened.includes(p) || !url;
           return (
-            <div key={p} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0e0e0e] p-3">
+            <div key={p} className={`flex items-center gap-3 rounded-2xl border p-3 transition ${done ? 'border-emerald-400/30 bg-emerald-500/[0.07]' : 'border-white/10 bg-[#0e0e0e]'}`}>
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10"><SocialIcon name={p} size={20} /></span>
               <div className="min-w-0 flex-1">
                 <div className="font-bold">{LABELS[p] ?? p}</div>
                 <div className="flex items-center gap-1 text-xs text-emerald-400">+{status.bonus} <Kred size={11} /></div>
               </div>
               {done ? (
-                <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-3 py-2 text-xs font-bold text-emerald-400"><Check size={14} /> Done</span>
+                <span className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-3 py-2 text-xs font-bold text-emerald-400"><Check size={14} /> Done</span>
+              ) : canClaim ? (
+                <button
+                  onClick={() => claim(p)}
+                  disabled={busy === p}
+                  className="pressable flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-5 py-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50"
+                >
+                  {busy === p ? <Loader2 size={14} className="animate-spin" /> : `Claim +${status.bonus}`}
+                </button>
               ) : (
-                <div className="flex shrink-0 items-center gap-2">
-                  {url && (
-                    <a href={url} target="_blank" rel="noreferrer noopener" className="pressable flex items-center gap-1 rounded-full border border-white/20 px-3 py-2 text-xs font-bold hover:bg-white/5">
-                      <ExternalLink size={13} /> Follow
-                    </a>
-                  )}
-                  <button onClick={() => claim(p)} disabled={busy === p} className="pressable rounded-full bg-white px-4 py-2 text-xs font-bold text-black disabled:opacity-50">
-                    {busy === p ? <Loader2 size={13} className="animate-spin" /> : 'Claim'}
-                  </button>
-                </div>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  onClick={() => markOpened(p)}
+                  className="pressable flex shrink-0 items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-xs font-bold text-black hover:bg-white/90"
+                >
+                  <ExternalLink size={14} /> Follow
+                </a>
               )}
             </div>
           );
@@ -70,7 +81,7 @@ export function FollowGate({ onDone }: { onDone: () => void }) {
       <button onClick={onDone} disabled={!all} className="pressable mt-6 min-h-12 w-full rounded-full bg-white text-sm font-bold text-black disabled:opacity-40">
         {all ? 'Enter Kredilo →' : `Follow all ${status.platforms.length} to continue`}
       </button>
-      <button onClick={onDone} className="mt-3 text-xs font-semibold text-white/40 underline underline-offset-4">Skip for now</button>
+      <p className="mt-3 text-xs text-white/40">Tap Follow, then come back and Claim your kreds.</p>
     </div>
   );
 }

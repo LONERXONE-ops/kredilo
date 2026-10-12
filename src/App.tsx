@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { ScrollToTop } from './components/ScrollToTop';
 import PostTask from './pages/dashboard/PostTask';
 import AdminPayments from './pages/admin/AdminPayments';
 import { DashboardLayout } from './components/DashboardLayout';
@@ -51,6 +52,7 @@ import NotFound from './pages/NotFound';
 function App() {
   return (
     <AuthProvider><BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* Public */}
         <Route element={<Layout />}>

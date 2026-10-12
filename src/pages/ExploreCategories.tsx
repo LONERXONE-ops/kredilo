@@ -21,7 +21,7 @@ export default function ExploreCategories() {
       <div className="light-beam pointer-events-none absolute inset-y-0 right-0 w-full lg:w-[60%]" />
       <div className="relative mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-block rounded-full border border-white/25 px-4 py-1.5 text-sm font-bold">Task Categories</span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-1.5 text-sm font-bold text-emerald-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Task Categories</span>
           <h1 className="mt-5 text-[2.6rem] font-extrabold leading-[1.05] sm:text-6xl">Explore Task Categories</h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-white/60">
             Choose from a variety of activities, complete the requirements, and earn kreds for approved work.
@@ -36,12 +36,12 @@ export default function ExploreCategories() {
               <Link
                 key={c.name}
                 to={`/tasks?category=${encodeURIComponent(c.name)}`}
-                className="group flex flex-col rounded-[1.75rem] border border-white/15 bg-white/[0.02] p-5 transition hover:border-white/35 hover:bg-white/[0.04]"
+                className="group flex flex-col rounded-[1.75rem] border border-white/15 bg-white/[0.02] p-5 transition hover:border-emerald-400/35 hover:bg-emerald-500/[0.04]"
               >
-                <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10"><Icon size={28} strokeWidth={1.7} /></span>
+                <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 transition group-hover:bg-emerald-500/15 group-hover:text-emerald-300"><Icon size={28} strokeWidth={1.7} /></span>
                 <h2 className="mt-4 text-xl font-extrabold">{c.label}</h2>
                 <p className="mt-1 text-sm leading-relaxed text-white/55">{c.text}</p>
-                <span className="mt-4 inline-flex items-center gap-2 self-start rounded-full bg-white/10 px-3.5 py-2 text-sm font-bold">
+                <span className="mt-4 inline-flex items-center gap-2 self-start rounded-full bg-emerald-500/10 px-3.5 py-2 text-sm font-bold text-emerald-300">
                   {count === 0 ? 'No tasks yet' : `${count} ${count === 1 ? 'task' : 'tasks'}`} <ArrowRight size={15} />
                 </span>
               </Link>
@@ -51,7 +51,7 @@ export default function ExploreCategories() {
 
         <div className="mt-4 flex flex-col items-start gap-4 rounded-[1.75rem] border border-white/15 bg-white/[0.02] p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10"><Gamepad2 size={26} /></span>
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300"><Gamepad2 size={26} /></span>
             <div>
               <div className="text-lg font-extrabold">Play Games, Earn More</div>
               <div className="text-sm text-white/55">Our built-in browser games reward approved completions.</div>
