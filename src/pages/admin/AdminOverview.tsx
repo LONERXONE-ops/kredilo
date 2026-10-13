@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AlertTriangle } from 'lucide-react';
 import { getOverview } from '../../lib/adminData';
 import type { Overview } from '../../lib/adminData';
 
@@ -28,6 +29,15 @@ export default function AdminOverview() {
 
       {o && (
         <>
+          {o.reserveLow && (
+            <Link to="/admin/funding" className="flex items-start gap-3 rounded-3xl border border-amber-400/40 bg-amber-400/10 p-4 text-sm text-amber-200 transition hover:bg-amber-400/15">
+              <AlertTriangle size={20} className="mt-0.5 shrink-0" />
+              <div>
+                <div className="font-extrabold">Reward reserve is running low</div>
+                <div className="mt-0.5 text-amber-200/80">Only {o.reserveTokens.toLocaleString()} kreds left. Top up in Funding before rewards start failing for users.</div>
+              </div>
+            </Link>
+          )}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             {cards.map((c) => (
               <Link key={c.label} to={c.to} className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-5 transition hover:border-white/25">

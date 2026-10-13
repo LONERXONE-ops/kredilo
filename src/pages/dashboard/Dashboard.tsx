@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, Gamepad2, ImageIcon, ListChecks, Search, Sparkles, Wallet as WalletIcon } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Gamepad2, ImageIcon, ListChecks, Search, Sparkles, Wallet as WalletIcon } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { getWallet, listMySubmissions, listTasks, statusLabel } from '../../lib/tasks';
 import type { MySubmission, Task, Wallet } from '../../lib/tasks';
@@ -209,6 +209,17 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <BalanceHero user={user} wallet={wallet} />
+
+      {wallet && (
+        <div className="flex items-center gap-4 rounded-3xl border border-white/10 bg-[#0e0e0e] px-5 py-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300"><CheckCircle2 size={24} /></span>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm text-white/55">Tasks completed this cycle</div>
+            <div className="text-2xl font-extrabold">{wallet.tasksThisCycle.toLocaleString()}</div>
+          </div>
+          <div className="shrink-0 text-right text-[11px] leading-tight text-white/40">resets when<br />you cash out</div>
+        </div>
+      )}
 
       <section className="space-y-4">
         <Tabs

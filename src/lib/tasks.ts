@@ -12,6 +12,7 @@ export type MySubmission = {
 export type Wallet = {
   balanceTokens: number; balanceNaira: number; rate: { tokens: number; naira: number };
   minWithdrawalTokens: number; minWithdrawalNaira: number;
+  tasksThisCycle: number; tasksTotal: number;
   transactions: { amount: number; reason: string; refType: string | null; refId: string | null; at: string }[];
 };
 

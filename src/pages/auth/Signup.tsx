@@ -14,6 +14,7 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [referral, setReferral] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -46,6 +47,7 @@ export default function Signup() {
           if (!/^[a-z0-9_]{3,20}$/.test(username.trim().toLowerCase())) return setError('Username must be 3-20 characters: lowercase letters, numbers or underscores.');
           if (password.length < 8) return setError('Password must be at least 8 characters long.');
           if (password !== confirm) return setError('Passwords do not match.');
+          if (!agreed) return setError('Please confirm you’re 18 or older and agree to the Terms and Privacy Policy.');
           setBusy(true);
           setError('');
           try {
@@ -63,8 +65,12 @@ export default function Signup() {
         <AuthField label="Password" icon={Lock} type="password" placeholder="Create a password" value={password} onChange={setPassword} hint="Password must be at least 8 characters long." autoComplete="new-password" />
         <AuthField label="Confirm Password" icon={Lock} type="password" placeholder="Confirm your password" value={confirm} onChange={setConfirm} autoComplete="new-password" />
         <AuthField label="Referral code (optional)" icon={Gift} type="text" placeholder="Enter a friend's code" value={referral} onChange={(v) => setReferral(v.toUpperCase())} hint="Did someone invite you? Enter their code so they get rewarded." />
+        <label className="flex items-start gap-2.5 text-xs leading-relaxed text-white/60">
+          <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-500" />
+          <span>I confirm I am 18 or older and I agree to Kredilo's <Link to="/terms" className="font-bold text-white underline underline-offset-2">Terms of Service</Link> and <Link to="/privacy" className="font-bold text-white underline underline-offset-2">Privacy Policy</Link>.</span>
+        </label>
         {error && <p role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
-        <button type="submit" disabled={busy} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-60">
+        <button type="submit" disabled={busy || !agreed} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-60">
           {busy ? 'Creating account...' : 'Create Account'} <ArrowRight size={18} />
         </button>
         <p className="text-center text-sm text-white/60">Already have an account? <Link to="/login" className="font-bold text-white underline underline-offset-4">Log In</Link></p>

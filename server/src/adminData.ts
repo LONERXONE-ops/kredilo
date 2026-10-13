@@ -30,7 +30,7 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
 
   route('GET', '/api/admin/overview', async (c) => {
     requireAdmin(c);
-    const { rate } = currentSettings(db);
+    const { rate, minWithdrawalTokens } = currentSettings(db);
     const reserve = reserveAvailable(db);
     return {
       users: one(db, "SELECT COUNT(*) AS n FROM users WHERE role = 'user'"),
@@ -41,6 +41,8 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
       openWithdrawals: one(db, "SELECT COUNT(*) AS n FROM withdrawals WHERE status IN ('requested','processing')"),
       reserveTokens: reserve,
       reserveNaira: tokensToNaira(reserve, rate),
+      // Warn the owner while there's still a buffer, before rewards start failing.
+      reserveLow: reserve < minWithdrawalTokens * 3,
     };
   });
 
