@@ -1,0 +1,16 @@
+{
+  "name": "Kredilo — Complete Tasks. Earn Rewards.",
+  "short_name": "Kredilo",
+  "description": "Complete simple tasks, play games and invite friends to earn kreds — then withdraw as Naira. Task-to-earn, built for Nigeria.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

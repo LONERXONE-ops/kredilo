@@ -3,8 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#050505" />
+    <meta name="description" content="Complete simple tasks, play games and invite friends to earn kreds — then withdraw as Naira. Task-to-earn, built for Nigeria." />
+
+    <!-- Install as an app ("Add to Home Screen") -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Kredilo" />
+
+    <!-- Social share preview (WhatsApp, X, Facebook, etc.) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Kredilo" />
+    <meta property="og:title" content="Kredilo — Complete Tasks. Earn Rewards." />
+    <meta property="og:description" content="Complete simple tasks, play games and invite friends to earn kreds — then withdraw as Naira. Built for Nigeria." />
+    <meta property="og:url" content="https://kredilo.com.ng/" />
+    <meta property="og:image" content="https://kredilo.com.ng/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Kredilo — Complete Tasks. Earn Rewards." />
+    <meta name="twitter:description" content="Complete simple tasks, play games and earn kreds. Built for Nigeria." />
+    <meta name="twitter:image" content="https://kredilo.com.ng/og-image.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -13,5 +37,12 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function () {});
+        });
+      }
+    </script>
   </body>
 </html>
