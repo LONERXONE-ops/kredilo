@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { CalendarClock, ClipboardList, ImageUp, Link2, Loader2, Receipt, Users } from 'lucide-react';
+import { CalendarClock, Check, ClipboardList, Copy, ImageUp, Link2, Loader2, Receipt, Users } from 'lucide-react';
 import { createPost, getPostPricing, listMyPosts, getPostDoers, postStatusLabel } from '../../lib/posts';
 import type { Doer, PostedTask, PostPricing } from '../../lib/posts';
 import { fileToDataUrl } from '../../lib/tasks';
@@ -47,6 +47,10 @@ function NewPost({ pricing }: { pricing: PostPricing }) {
   const rewardEach = days * pricing.perDayTokens;
   const pool = rewardEach * people;
   const pay = pricing.payTo;
+  const [copied, setCopied] = useState(false);
+  const copyAcct = async () => {
+    try { await navigator.clipboard.writeText(pay.accountNumber); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* clipboard unavailable */ }
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -106,7 +110,17 @@ function NewPost({ pricing }: { pricing: PostPricing }) {
         <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm">
           <div className="text-xs font-semibold text-white/45">Transfer ₦{price.toLocaleString()} to</div>
           {pay.bankName || pay.accountNumber ? (
-            <div className="mt-1"><div className="font-bold">{pay.accountName}</div><div className="text-white/70">{pay.bankName} · {pay.accountNumber}</div></div>
+            <div className="mt-1.5 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="font-bold">{pay.accountName}</div>
+                <div className="truncate text-white/70">{pay.bankName} · {pay.accountNumber}</div>
+              </div>
+              {pay.accountNumber && (
+                <button type="button" onClick={copyAcct} aria-label="Copy account number" className="pressable flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20">
+                  {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
+                </button>
+              )}
+            </div>
           ) : (<div className="mt-1 text-white/50">Payment details will show here once set up by the admin.</div>)}
         </div>
         <Field label="Upload your payment receipt"><ImagePick value={receipt} onPick={setReceipt} /></Field>
