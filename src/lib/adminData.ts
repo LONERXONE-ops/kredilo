@@ -23,3 +23,4 @@ export const setExchangeRate = (kreds: number, naira: number) => apiRequest<{ ra
 export const getLedger = () => apiRequest<{ entries: LedgerEntry[] }>('/api/admin/ledger').then((r) => r.entries);
 export const getAudit = () => apiRequest<{ entries: AuditEntry[] }>('/api/admin/audit').then((r) => r.entries);
 export const getFraud = () => apiRequest<Fraud>('/api/admin/fraud');
+export const sendAnnouncement = (title: string, body: string) => apiRequest<{ sent: number }>('/api/admin/announce', { title, body });

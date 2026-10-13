@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, Gamepad2, ImageIcon, ListChecks, Search, Sparkles, Wallet as WalletIcon } from 'lucide-react';
+import { ArrowRight, Gamepad2, ImageIcon, ListChecks, Search, Sparkles, Wallet as WalletIcon } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { getWallet, listMySubmissions, listTasks, statusLabel } from '../../lib/tasks';
 import type { MySubmission, Task, Wallet } from '../../lib/tasks';
@@ -147,7 +147,7 @@ function MyTasksList() {
 function BalanceHero({ user, wallet }: { user: { username: string } | null; wallet: Wallet | null }) {
   const balance = wallet?.balanceTokens ?? 0;
   const balanceNaira = wallet?.balanceNaira ?? 0;
-  const min = wallet?.minWithdrawalTokens ?? 2000;
+  const tasks = wallet?.tasksThisCycle ?? 0;
   const earned = wallet?.transactions.filter((t) => t.amount > 0).reduce((a, b) => a + b.amount, 0) ?? 0;
   const rate = wallet?.rate;
   const earnedNaira = rate && rate.tokens > 0 ? Math.floor((earned * rate.naira) / rate.tokens) : 0;
@@ -178,9 +178,9 @@ function BalanceHero({ user, wallet }: { user: { username: string } | null; wall
           <div className="text-[10px] text-white/30">≈ ₦{earnedNaira.toLocaleString()}</div>
         </div>
         <div className="rounded-2xl bg-black/25 p-4 text-center">
-          <div className="flex items-center justify-center gap-1 text-xl font-extrabold">{min.toLocaleString()} <Kred size={15} /></div>
-          <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-white/40">Min withdrawal</div>
-          <div className="text-[10px] text-white/30">to cash out</div>
+          <div className="text-xl font-extrabold">{tasks.toLocaleString()}</div>
+          <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-white/40">Tasks this cycle</div>
+          <div className="text-[10px] text-white/30">completed</div>
         </div>
       </div>
 
@@ -209,17 +209,6 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <BalanceHero user={user} wallet={wallet} />
-
-      {wallet && (
-        <div className="flex items-center gap-4 rounded-3xl border border-white/10 bg-[#0e0e0e] px-5 py-4">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300"><CheckCircle2 size={24} /></span>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm text-white/55">Tasks completed this cycle</div>
-            <div className="text-2xl font-extrabold">{wallet.tasksThisCycle.toLocaleString()}</div>
-          </div>
-          <div className="shrink-0 text-right text-[11px] leading-tight text-white/40">resets when<br />you cash out</div>
-        </div>
-      )}
 
       <section className="space-y-4">
         <Tabs

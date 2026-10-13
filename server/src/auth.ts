@@ -21,6 +21,8 @@ export type UserRow = {
   referral_code: string | null;
   referred_by: string | null;
   referral_bonus_paid: number;
+  streak: number;
+  last_streak_day: string | null;
 };
 
 // Kreds a referrer earns when someone they invited completes their first task.

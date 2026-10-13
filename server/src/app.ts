@@ -10,6 +10,7 @@ import { avatarRoutes } from './avatar.ts';
 import { notificationRoutes } from './notifications.ts';
 import { gameRoutes } from './games.ts';
 import { socialRoutes } from './social.ts';
+import { streakRoutes } from './streak.ts';
 import { audit } from './db.ts';
 import type { Db } from './db.ts';
 import {
@@ -205,6 +206,7 @@ export function createApp(db: Db, o: AppOptions): Server {
   notificationRoutes({ db, route, requireUser });
   gameRoutes({ db, route, requireUser });
   socialRoutes({ db, route, requireUser });
+  streakRoutes({ db, route, requireUser });
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     try {

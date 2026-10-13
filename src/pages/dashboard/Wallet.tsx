@@ -19,6 +19,7 @@ const reasonLabel: Record<string, string> = {
   referral: 'Referral bonus',
   game_reward: 'Game reward',
   follow_bonus: 'Follow bonus',
+  streak_bonus: 'Daily streak',
 };
 
 // Live D–H–M–S countdown to a target ISO time.

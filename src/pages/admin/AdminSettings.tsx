@@ -2,7 +2,41 @@ import { useEffect, useState } from 'react';
 import { CalendarClock, Check, Loader2, Lock, Megaphone } from 'lucide-react';
 import { getWithdrawalSettings, setWithdrawalOpen } from '../../lib/withdrawals';
 import { getPostPricing, setPostRate } from '../../lib/posts';
+import { sendAnnouncement } from '../../lib/adminData';
 import { Kred } from '../../components/Kred';
+
+// Blast a notification to every user.
+function Announce() {
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    setBusy(true); setNote('');
+    try { const r = await sendAnnouncement(title.trim(), body.trim()); setTitle(''); setBody(''); setNote(`Sent to ${r.sent} user${r.sent === 1 ? '' : 's'}.`); }
+    catch (e) { setNote(e instanceof Error ? e.message : 'Could not send.'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <section className="overflow-hidden rounded-3xl border border-white/10 bg-[#0e0e0e]">
+      <div className="flex items-center gap-3 border-b border-white/[0.06] bg-white/[0.03] px-5 py-4">
+        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300"><Megaphone size={20} /></span>
+        <div>
+          <h2 className="font-extrabold">Announcement</h2>
+          <p className="text-xs text-white/50">Send one notification to every user at once.</p>
+        </div>
+      </div>
+      <div className="space-y-3 p-5 sm:p-6">
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title (e.g. Withdrawals open Friday!)" className="h-12 w-full rounded-2xl border border-white/15 bg-black/40 px-4 text-sm outline-none transition focus:border-white/40" />
+        <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} placeholder="Message (optional)" className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-sm outline-none transition focus:border-white/40" />
+        <button disabled={busy || !title.trim()} onClick={send} className="pressable inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-black disabled:opacity-50">
+          {busy ? <Loader2 size={16} className="animate-spin" /> : <Megaphone size={16} />} Send to everyone
+        </button>
+        {note && <span className="ml-3 text-xs text-white/60">{note}</span>}
+      </div>
+    </section>
+  );
+}
 
 function MiniCountdown({ to }: { to: string }) {
   const [now, setNow] = useState(Date.now());
@@ -119,6 +153,7 @@ export default function AdminSettings() {
       <div className="stagger space-y-4">
         <Withdrawals />
         <PostingRate />
+        <Announce />
       </div>
     </div>
   );

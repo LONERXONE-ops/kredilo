@@ -74,6 +74,19 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
     return { ok: true };
   });
 
+  // Broadcast one notification to every user at once.
+  route('POST', '/api/admin/announce', async (c) => {
+    const admin = requireOwner(c);
+    const title = str(c.body.title, 120);
+    const body = str(c.body.body, 1000);
+    if (!title) throw new HttpError(400, 'Enter an announcement title.');
+    const res = db
+      .prepare("INSERT INTO notifications (id, user_id, type, title, body) SELECT lower(hex(randomblob(16))), id, 'announcement', ?, ? FROM users")
+      .run(title, body || null);
+    audit(db, admin.id, 'announce', null, { title, sent: res.changes });
+    return { ok: true, sent: res.changes };
+  });
+
   route('GET', '/api/admin/funding', async (c) => {
     requireOwner(c);
     const { rate } = currentSettings(db);
