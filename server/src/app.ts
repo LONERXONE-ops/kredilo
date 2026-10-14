@@ -11,6 +11,7 @@ import { notificationRoutes } from './notifications.ts';
 import { gameRoutes } from './games.ts';
 import { socialRoutes } from './social.ts';
 import { streakRoutes } from './streak.ts';
+import { googleRoutes } from './google.ts';
 import { audit } from './db.ts';
 import type { Db } from './db.ts';
 import {
@@ -208,6 +209,7 @@ export function createApp(db: Db, o: AppOptions): Server {
   gameRoutes({ db, route, requireUser });
   socialRoutes({ db, route, requireUser });
   streakRoutes({ db, route, requireUser });
+  googleRoutes({ db, route, options: o, setSession, maybePromoteOwner });
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     try {

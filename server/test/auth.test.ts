@@ -201,3 +201,12 @@ test('unknown routes return 404 JSON', async () => {
   assert.equal(r.status, 404);
   t.close();
 });
+
+test('google sign-in stays disabled until configured', async () => {
+  delete process.env.GOOGLE_CLIENT_ID;
+  delete process.env.GOOGLE_CLIENT_SECRET;
+  const t = await setup();
+  assert.equal((await t.call('GET', '/api/auth/google/enabled')).json.enabled, false);
+  assert.equal((await t.call('GET', '/api/auth/google')).status, 404); // no redirect until keys are set
+  t.close();
+});

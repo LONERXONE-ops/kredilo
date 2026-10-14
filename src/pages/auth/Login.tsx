@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Coins, Gamepad2, Lock, Mail, WalletCards, Zap } from 'lucide-react';
 import { AuthShell } from '../../components/AuthShell';
 import { AuthField } from '../../components/AuthField';
+import { GoogleButton } from '../../components/GoogleButton';
 import { useAuth } from '../../lib/auth';
 
 export default function Login() {
@@ -56,6 +57,7 @@ export default function Login() {
         <button type="submit" disabled={busy} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-60">
           {busy ? 'Logging in...' : 'Log In'} <ArrowRight size={18} />
         </button>
+        <GoogleButton label="Log in with Google" />
         <p className="text-center text-sm text-white/60">Don’t have an account? <Link to="/signup" className="font-bold text-white underline underline-offset-4">Sign Up</Link></p>
       </form>
     </AuthShell>
