@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { getUsers, setUserStatus } from '../../lib/adminData';
 import type { AdminUser } from '../../lib/adminData';
 import { useAuth } from '../../lib/auth';
@@ -24,10 +25,7 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-4xl font-extrabold">Users</h1>
-        <p className="mt-1 text-white/55">Everyone with a Kredilo account.</p>
-      </div>
+      <SectionHeader title="Users" info="Everyone with a Kredilo account." />
       <div className="relative">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by email..." className="h-12 w-full rounded-full border border-white/10 bg-[#0e0e0e] pl-11 pr-4 text-sm outline-none placeholder:text-white/35 focus:border-white/30" />

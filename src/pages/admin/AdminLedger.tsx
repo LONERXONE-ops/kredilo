@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { getLedger } from '../../lib/adminData';
 import type { LedgerEntry } from '../../lib/adminData';
 
@@ -13,10 +14,7 @@ export default function AdminLedger() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-4xl font-extrabold">Ledger</h1>
-        <p className="mt-1 text-white/55">Every token movement, newest first. Append-only.</p>
-      </div>
+      <SectionHeader title="Ledger" info="Every token movement, newest first. Append-only." />
       {error && <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
       {!rows && !error && <p className="rounded-3xl border border-white/10 p-8 text-center text-sm text-white/45">Loading...</p>}
       <div className="space-y-2">

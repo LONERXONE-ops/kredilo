@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Check, X } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { confirmPost, listAdminPosts, rejectPost } from '../../lib/posts';
 import type { AdminPost } from '../../lib/posts';
 
@@ -23,10 +24,7 @@ export default function AdminPayments() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-extrabold">Posted tasks</h1>
-        <p className="mt-1 text-white/55">Confirm a payment only after the money is actually in the account. A receipt can be faked.</p>
-      </div>
+      <SectionHeader title="Posted tasks" info="Confirm a payment only after the money is actually in the account. A receipt can be faked." />
       {error && <p role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
       {!posts && !error && <p className="rounded-3xl border border-white/10 p-8 text-center text-sm text-white/45">Loading...</p>}
       {posts && posts.length === 0 && <p className="rounded-3xl border border-white/10 p-8 text-center text-sm text-white/45">No posted tasks awaiting payment.</p>}

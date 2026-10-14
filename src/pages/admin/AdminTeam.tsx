@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Copy, Trash2, UserPlus } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { apiRequest } from '../../lib/auth';
 
 type Member = { id: string; email: string; role: string; createdAt: string };
@@ -68,10 +69,7 @@ export default function AdminTeam() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-extrabold">Team</h1>
-        <p className="mt-1 max-w-xl text-white/55">Only the owner can add or remove admins. Every change is written to the audit log.</p>
-      </div>
+      <SectionHeader title="Team" info="Only the owner can add or remove admins. Every change is written to the audit log." />
 
       {error && <p role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
 

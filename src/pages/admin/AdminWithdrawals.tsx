@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Ban, Check, Clock } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { cancelWithdrawal, listAdminWithdrawals, markPaid, setProcessing, wStatusLabel } from '../../lib/withdrawals';
 import type { AdminWithdrawal } from '../../lib/withdrawals';
 
@@ -27,10 +28,7 @@ export default function AdminWithdrawals() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-extrabold">Withdrawals</h1>
-        <p className="mt-1 text-white/55">Send the transfer by hand, then mark it paid with the reference. Confirm bank details before sending.</p>
-      </div>
+      <SectionHeader title="Withdrawals" info="Send the transfer by hand, then mark it paid with the reference. Confirm bank details before sending." />
       <div className="flex gap-2">
         {filters.map(([v, label]) => (
           <button key={v} onClick={() => setFilter(v)} className={`min-h-10 rounded-full border px-4 text-sm font-bold ${filter === v ? 'border-white bg-white text-black' : 'border-white/15 text-white/70'}`}>{label}</button>

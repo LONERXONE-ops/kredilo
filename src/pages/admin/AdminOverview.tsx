@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { getOverview } from '../../lib/adminData';
 import type { Overview } from '../../lib/adminData';
 
@@ -20,10 +21,7 @@ export default function AdminOverview() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-extrabold">Admin</h1>
-        <p className="mt-1 text-white/55">Live operations overview.</p>
-      </div>
+      <SectionHeader title="Admin" info="Live operations overview." />
       {error && <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
       {!o && !error && <p className="rounded-3xl border border-white/10 p-8 text-center text-sm text-white/45">Loading...</p>}
 

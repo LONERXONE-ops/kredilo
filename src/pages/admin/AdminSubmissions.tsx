@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Check, X } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { approveSubmission, listPendingSubmissions, rejectSubmission } from '../../lib/admin';
 import type { PendingSubmission } from '../../lib/admin';
 import { Kred } from '../../components/Kred';
@@ -31,10 +32,7 @@ export default function AdminSubmissions() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-extrabold">Submissions</h1>
-        <p className="mt-1 text-white/55">Proof awaiting review. Approving credits the reward through the ledger.</p>
-      </div>
+      <SectionHeader title="Submissions" info="Proof awaiting review. Approving credits the reward through the ledger." />
       {error && <p role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
       {!subs && !error && <p className="rounded-3xl border border-white/10 p-8 text-center text-sm text-white/45">Loading...</p>}
       {subs && subs.length === 0 && <p className="rounded-3xl border border-white/10 p-8 text-center text-sm text-white/45">Nothing awaiting review.</p>}

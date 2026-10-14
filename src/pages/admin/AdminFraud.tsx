@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ShieldAlert } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { getFraud } from '../../lib/adminData';
 import type { Fraud } from '../../lib/adminData';
 
@@ -10,10 +11,7 @@ export default function AdminFraud() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-extrabold">Fraud signals</h1>
-        <p className="mt-1 text-white/55">Patterns worth a look. These are hints, not proof.</p>
-      </div>
+      <SectionHeader title="Fraud signals" info="Patterns worth a look. These are hints, not proof." />
       {error && <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
       {!f && !error && <p className="rounded-3xl border border-white/10 p-8 text-center text-sm text-white/45">Loading...</p>}
       {f && (

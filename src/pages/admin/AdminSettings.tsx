@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CalendarClock, Check, Loader2, Lock, Megaphone } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { getWithdrawalSettings, setWithdrawalOpen } from '../../lib/withdrawals';
 import { getPostPricing, setPostRate } from '../../lib/posts';
 import { sendAnnouncement } from '../../lib/adminData';
@@ -146,10 +147,7 @@ function PostingRate() {
 export default function AdminSettings() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-extrabold">Settings</h1>
-        <p className="mt-1 text-white/55">Platform controls.</p>
-      </div>
+      <SectionHeader title="Settings" info="Platform controls." />
       <div className="stagger space-y-4">
         <Withdrawals />
         <PostingRate />

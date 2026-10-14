@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ClipboardList, ImageUp, Link2, Plus, Settings2, Trash2 } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { createTask, deleteTask } from '../../lib/admin';
 import { fileToDataUrl, listTasks } from '../../lib/tasks';
 import type { Task } from '../../lib/tasks';
@@ -58,15 +59,15 @@ export default function AdminTasks() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-4xl font-extrabold">Tasks</h1>
-          <p className="mt-1 max-w-xl text-white/55">Create tasks and set their rewards. Rewards are funded from the reserve.</p>
-        </div>
-        <button onClick={() => setOpen(!open)} className="pressable inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-black hover:bg-white/90">
-          <Plus size={16} /> {open ? 'Close' : 'New task'}
-        </button>
-      </div>
+      <SectionHeader
+        title="Tasks"
+        info="Create tasks and set their rewards. Rewards are funded from the reserve."
+        right={
+          <button onClick={() => setOpen(!open)} className="pressable inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-black hover:bg-white/90">
+            <Plus size={16} /> {open ? 'Close' : 'New task'}
+          </button>
+        }
+      />
 
       {open && (
         <form onSubmit={submit} className="animate-[popin_240ms_ease-out] space-y-4">

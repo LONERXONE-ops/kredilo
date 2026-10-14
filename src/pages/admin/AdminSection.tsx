@@ -1,5 +1,6 @@
 import { Navigate, useParams } from 'react-router-dom';
 import { Lock } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { adminPlaceholders } from '../../lib/adminSections';
 
 export default function AdminSection() {
@@ -9,10 +10,7 @@ export default function AdminSection() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-extrabold">{info.title}</h1>
-        <p className="mt-1 text-white/55">{info.description}</p>
-      </div>
+      <SectionHeader title={info.title} info={info.description} />
       <section className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-extrabold">This section will include</h2>

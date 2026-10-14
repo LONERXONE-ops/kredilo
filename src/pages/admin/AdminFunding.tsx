@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ChevronDown, Loader2, Plus, Scale } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { addFunding, getFunding, setExchangeRate } from '../../lib/adminData';
 import type { Funding } from '../../lib/adminData';
 import { Kred } from '../../components/Kred';
@@ -123,10 +124,7 @@ export default function AdminFunding() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-extrabold">Funding &amp; reserve</h1>
-        <p className="mt-1 text-white/55">Live figures from the ledger.</p>
-      </div>
+      <SectionHeader title="Funding &amp; reserve" info="Live figures from the ledger." />
       {error && <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
       {!f && !error && <p className="rounded-3xl border border-white/10 p-8 text-center text-sm text-white/45">Loading...</p>}
       {f && (

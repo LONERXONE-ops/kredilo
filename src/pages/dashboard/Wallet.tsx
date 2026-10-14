@@ -6,6 +6,7 @@ import type { Wallet as WalletData } from '../../lib/tasks';
 import { Tabs } from '../../components/Tabs';
 import { Kred } from '../../components/Kred';
 import { EmptyState } from '../../components/EmptyState';
+import { SectionHeader } from '../../components/SectionHeader';
 import { flagNotReceived, getWithdrawals, requestWithdrawal, wStatusLabel } from '../../lib/withdrawals';
 import type { MyWithdrawal, WithdrawalState } from '../../lib/withdrawals';
 
@@ -220,10 +221,7 @@ export default function Wallet() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-4xl font-extrabold">Wallet</h1>
-        <p className="mt-1 text-white/55">Your kred balance, withdrawals and transaction history.</p>
-      </div>
+      <SectionHeader title="Wallet" info="Your kred balance, withdrawals and transaction history." />
       <Tabs
         tabs={[{ id: 'overview' as Tab, label: 'Overview' }, { id: 'withdraw' as Tab, label: 'Withdraw' }, { id: 'transactions' as Tab, label: 'Transactions' }]}
         value={tab}

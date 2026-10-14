@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CalendarClock, Check, ClipboardList, Copy, ImageUp, Link2, Loader2, Receipt, Users } from 'lucide-react';
+import { SectionHeader } from '../../components/SectionHeader';
 import { createPost, getPostPricing, listMyPosts, getPostDoers, postStatusLabel } from '../../lib/posts';
 import type { Doer, PostedTask, PostPricing } from '../../lib/posts';
 import { fileToDataUrl } from '../../lib/tasks';
@@ -191,10 +192,7 @@ export default function PostTask() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <div>
-        <h1 className="text-4xl font-extrabold">Post a Task</h1>
-        <p className="mt-1 text-white/55">Pay to post a task and have Kredilo users complete it.</p>
-      </div>
+      <SectionHeader title="Post a Task" info="Pay to post a task and have Kredilo users complete it." />
       <Tabs tabs={[{ id: 'new' as Tab, label: 'New Task' }, { id: 'mine' as Tab, label: 'My Posted Tasks' }]} value={tab} onChange={setTab} />
       {error && <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
       {tab === 'new' ? (pricing ? <NewPost pricing={pricing} /> : !error && <div className="skeleton h-96 rounded-3xl" />) : <MyPosts />}
