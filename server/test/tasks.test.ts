@@ -40,13 +40,13 @@ test('full doer flow: accept, submit, admin approves, tokens credited once', asy
   const queue = await t.call('GET', '/api/admin/submissions', undefined, owner);
   assert.equal(queue.json.submissions.length, 1);
   const subId = queue.json.submissions[0].id;
-  assert.equal(balance(t.db, did), 0);
+  assert.equal(await balance(t.db, did), 0);
   assert.equal((await t.call('GET', '/api/tasks/mine', undefined, doer)).json.submissions[0].status, 'pending_review');
   assert.equal((await t.call('POST', '/api/admin/submissions/approve', { submissionId: subId }, owner)).status, 200);
-  assert.equal(balance(t.db, did), 30);
-  assert.equal(reserveAvailable(t.db), 4800 - 30);
+  assert.equal(await balance(t.db, did), 30);
+  assert.equal(await reserveAvailable(t.db), 4800 - 30);
   assert.equal((await t.call('POST', '/api/admin/submissions/approve', { submissionId: subId }, owner)).status, 409);
-  assert.equal(balance(t.db, did), 30);
+  assert.equal(await balance(t.db, did), 30);
   t.close();
 });
 
@@ -61,7 +61,7 @@ test('reject records a reason, credits nothing, and the doer sees it', async () 
   const subId = (await t.call('GET', '/api/admin/submissions', undefined, owner)).json.submissions[0].id;
   assert.equal((await t.call('POST', '/api/admin/submissions/reject', { submissionId: subId }, owner)).status, 400);
   assert.equal((await t.call('POST', '/api/admin/submissions/reject', { submissionId: subId, reason: 'Screenshot does not show a follow' }, owner)).status, 200);
-  assert.equal(balance(t.db, did), 0);
+  assert.equal(await balance(t.db, did), 0);
   const mine = (await t.call('GET', '/api/tasks/mine', undefined, doer)).json.submissions[0];
   assert.equal(mine.status, 'rejected');
   assert.equal(mine.rejectReason, 'Screenshot does not show a follow');

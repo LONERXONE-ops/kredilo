@@ -35,7 +35,7 @@ test('users list shows balances; owner can suspend; suspended user is logged out
   const owner = await t.makeUser(OWNER);
   const u = await t.makeUser('u@example.com');
   const uid = await meId(t, u);
-  creditReward(t.db, { userId: uid, tokens: 50, refType: 'x', refId: '1', idempotencyKey: 'k1', fromReserve: false });
+  await creditReward(t.db, { userId: uid, tokens: 50, refType: 'x', refId: '1', idempotencyKey: 'k1', fromReserve: false });
   const list = await t.call('GET', '/api/admin/users', undefined, owner);
   const row = list.json.users.find((x: any) => x.email === 'u@example.com');
   assert.equal(row.balance, 50);

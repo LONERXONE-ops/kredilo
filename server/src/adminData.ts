@@ -1,5 +1,5 @@
 import { audit } from './db.ts';
-import type { Db } from './db.ts';
+import type { Db, Queryable } from './db.ts';
 import type { UserRow } from './auth.ts';
 import { HttpError } from './http.ts';
 import type { Ctx } from './http.ts';
@@ -10,35 +10,35 @@ import { deleteUserSessions } from './auth.ts';
 type Deps = {
   db: Db;
   route: (method: string, path: string, h: (c: Ctx) => Promise<unknown>) => void;
-  requireUser: (c: Ctx) => UserRow;
+  requireUser: (c: Ctx) => Promise<UserRow>;
 };
 
 const str = (v: unknown, max = 100) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
-const one = (db: Db, sql: string, ...p: unknown[]) => (db.prepare(sql).get(...p) as { n: number }).n;
+const one = async (db: Queryable, sql: string, ...p: unknown[]) => ((await db.prepare(sql).get(...p)) as { n: number }).n;
 
 export function adminDataRoutes({ db, route, requireUser }: Deps) {
-  const requireAdmin = (c: Ctx): UserRow => {
-    const u = requireUser(c);
+  const requireAdmin = async (c: Ctx): Promise<UserRow> => {
+    const u = await requireUser(c);
     if (u.role === 'user') throw new HttpError(403, 'Admins only.');
     return u;
   };
-  const requireOwner = (c: Ctx): UserRow => {
-    const u = requireUser(c);
+  const requireOwner = async (c: Ctx): Promise<UserRow> => {
+    const u = await requireUser(c);
     if (u.role !== 'owner') throw new HttpError(403, 'Owner only.');
     return u;
   };
 
   route('GET', '/api/admin/overview', async (c) => {
-    requireAdmin(c);
-    const { rate, minWithdrawalTokens } = currentSettings(db);
-    const reserve = reserveAvailable(db);
+    await requireAdmin(c);
+    const { rate, minWithdrawalTokens } = await currentSettings(db);
+    const reserve = await reserveAvailable(db);
     return {
-      users: one(db, "SELECT COUNT(*) AS n FROM users WHERE role = 'user'"),
-      admins: one(db, "SELECT COUNT(*) AS n FROM users WHERE role != 'user'"),
-      liveTasks: one(db, "SELECT COUNT(*) AS n FROM tasks WHERE status = 'live'"),
-      pendingReviews: one(db, "SELECT COUNT(*) AS n FROM submissions WHERE status = 'pending_review'"),
-      pendingPosts: one(db, "SELECT COUNT(*) AS n FROM tasks WHERE kind = 'posted' AND status = 'pending_payment'"),
-      openWithdrawals: one(db, "SELECT COUNT(*) AS n FROM withdrawals WHERE status IN ('requested','processing')"),
+      users: await one(db, "SELECT COUNT(*) AS n FROM users WHERE role = 'user'"),
+      admins: await one(db, "SELECT COUNT(*) AS n FROM users WHERE role != 'user'"),
+      liveTasks: await one(db, "SELECT COUNT(*) AS n FROM tasks WHERE status = 'live'"),
+      pendingReviews: await one(db, "SELECT COUNT(*) AS n FROM submissions WHERE status = 'pending_review'"),
+      pendingPosts: await one(db, "SELECT COUNT(*) AS n FROM tasks WHERE kind = 'posted' AND status = 'pending_payment'"),
+      openWithdrawals: await one(db, "SELECT COUNT(*) AS n FROM withdrawals WHERE status IN ('requested','processing')"),
       reserveTokens: reserve,
       reserveNaira: tokensToNaira(reserve, rate),
       // Warn the owner while there's still a buffer, before rewards start failing.
@@ -47,54 +47,56 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
   });
 
   route('GET', '/api/admin/users', async (c) => {
-    const u = requireAdmin(c);
+    const u = await requireAdmin(c);
     if (u.role === 'reviewer') throw new HttpError(403, 'Not allowed.');
     const q = str(c.query.q, 80).toLowerCase();
-    const rows = db
+    const rows = (await db
       .prepare(`SELECT id, email, role, status, email_verified_at, created_at, avatar_ref FROM users ${q ? 'WHERE LOWER(email) LIKE ?' : ''} ORDER BY created_at DESC LIMIT 200`)
-      .all(...(q ? [`%${q}%`] : [])) as { id: string; email: string; role: string; status: string; email_verified_at: string | null; created_at: string; avatar_ref: string | null }[];
+      .all(...(q ? [`%${q}%`] : []))) as { id: string; email: string; role: string; status: string; email_verified_at: string | null; created_at: string; avatar_ref: string | null }[];
     return {
-      users: rows.map((r) => ({
-        id: r.id, email: r.email, role: r.role, status: r.status,
-        emailVerified: r.email_verified_at !== null, balance: balance(db, r.id), createdAt: r.created_at, avatar: avatarUrl(r.avatar_ref),
-      })),
+      users: await Promise.all(
+        rows.map(async (r) => ({
+          id: r.id, email: r.email, role: r.role, status: r.status,
+          emailVerified: r.email_verified_at !== null, balance: await balance(db, r.id), createdAt: r.created_at, avatar: avatarUrl(r.avatar_ref),
+        })),
+      ),
     };
   });
 
   route('POST', '/api/admin/users/status', async (c) => {
-    const admin = requireOwner(c);
-    const target = db.prepare('SELECT * FROM users WHERE id = ?').get(str(c.body.userId, 64)) as UserRow | undefined;
+    const admin = await requireOwner(c);
+    const target = (await db.prepare('SELECT * FROM users WHERE id = ?').get(str(c.body.userId, 64))) as UserRow | undefined;
     if (!target) throw new HttpError(404, 'User not found.');
     if (target.id === admin.id) throw new HttpError(400, 'You cannot change your own status.');
     if (target.role === 'owner') throw new HttpError(400, 'You cannot suspend an owner.');
     const status = c.body.suspend ? 'suspended' : 'active';
-    db.prepare('UPDATE users SET status = ? WHERE id = ?').run(status, target.id);
-    if (status === 'suspended') deleteUserSessions(db, target.id);
-    audit(db, admin.id, status === 'suspended' ? 'user.suspend' : 'user.reinstate', target.id);
+    await db.prepare('UPDATE users SET status = ? WHERE id = ?').run(status, target.id);
+    if (status === 'suspended') await deleteUserSessions(db, target.id);
+    await audit(db, admin.id, status === 'suspended' ? 'user.suspend' : 'user.reinstate', target.id);
     return { ok: true };
   });
 
   // Broadcast one notification to every user at once.
   route('POST', '/api/admin/announce', async (c) => {
-    const admin = requireOwner(c);
+    const admin = await requireOwner(c);
     const title = str(c.body.title, 120);
     const body = str(c.body.body, 1000);
     if (!title) throw new HttpError(400, 'Enter an announcement title.');
-    const res = db
+    const res = await db
       .prepare("INSERT INTO notifications (id, user_id, type, title, body) SELECT lower(hex(randomblob(16))), id, 'announcement', ?, ? FROM users")
       .run(title, body || null);
-    audit(db, admin.id, 'announce', null, { title, sent: res.changes });
+    await audit(db, admin.id, 'announce', null, { title, sent: res.changes });
     return { ok: true, sent: res.changes };
   });
 
   route('GET', '/api/admin/funding', async (c) => {
-    requireOwner(c);
-    const { rate } = currentSettings(db);
-    const sum = (reason: string) => (db.prepare('SELECT COALESCE(SUM(amount),0) AS n FROM reserve WHERE reason = ?').get(reason) as { n: number }).n;
-    const funded = sum('initial_reserve') + sum('post_payment') + sum('funding_add');
-    const issued = -sum('reward_issued');
-    const available = reserveAvailable(db);
-    const liabilities = one(db, "SELECT COALESCE(SUM(amount),0) AS n FROM ledger WHERE reason = 'withdrawal_hold'") * -1;
+    await requireOwner(c);
+    const { rate } = await currentSettings(db);
+    const sum = async (reason: string) => ((await db.prepare('SELECT COALESCE(SUM(amount),0) AS n FROM reserve WHERE reason = ?').get(reason)) as { n: number }).n;
+    const funded = (await sum('initial_reserve')) + (await sum('post_payment')) + (await sum('funding_add'));
+    const issued = -(await sum('reward_issued'));
+    const available = await reserveAvailable(db);
+    const liabilities = (await one(db, "SELECT COALESCE(SUM(amount),0) AS n FROM ledger WHERE reason = 'withdrawal_hold'")) * -1;
     return {
       rate: { tokens: rate.num, naira: rate.den },
       fundedTokens: funded, fundedNaira: tokensToNaira(funded, rate),
@@ -106,57 +108,57 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
 
   // Owner tops up the reward reserve.
   route('POST', '/api/admin/funding', async (c) => {
-    const admin = requireOwner(c);
+    const admin = await requireOwner(c);
     const tokens = Math.floor(Number(c.body.tokens));
     if (!Number.isFinite(tokens) || tokens <= 0) throw new HttpError(400, 'Enter a positive number of kreds.');
     if (tokens > 1_000_000_000) throw new HttpError(400, 'That amount is too large.');
-    addFunding(db, tokens, 'funding_add', 'manual', undefined, admin.id);
-    const { rate } = currentSettings(db);
-    const available = reserveAvailable(db);
+    await addFunding(db, tokens, 'funding_add', 'manual', undefined, admin.id);
+    const { rate } = await currentSettings(db);
+    const available = await reserveAvailable(db);
     return { ok: true, availableTokens: available, availableNaira: tokensToNaira(available, rate) };
   });
 
   // Owner changes the kred <-> naira exchange rate. Stored as a new versioned settings row,
   // so past ledger entries (which snapshot their own rate) are untouched.
   route('POST', '/api/admin/rate', async (c) => {
-    const admin = requireOwner(c);
+    const admin = await requireOwner(c);
     const kreds = Math.floor(Number(c.body.kreds));
     const naira = Math.floor(Number(c.body.naira));
     if (!Number.isFinite(kreds) || kreds <= 0 || !Number.isFinite(naira) || naira <= 0) throw new HttpError(400, 'Enter positive values for both kreds and naira.');
-    const cur = currentSettings(db);
-    db.prepare('INSERT INTO settings (tokens_per_naira_num, tokens_per_naira_den, min_withdrawal_tokens) VALUES (?, ?, ?)').run(kreds, naira, cur.minWithdrawalTokens);
-    audit(db, admin.id, 'settings.rate', null, { kreds, naira });
+    const cur = await currentSettings(db);
+    await db.prepare('INSERT INTO settings (tokens_per_naira_num, tokens_per_naira_den, min_withdrawal_tokens) VALUES (?, ?, ?)').run(kreds, naira, cur.minWithdrawalTokens);
+    await audit(db, admin.id, 'settings.rate', null, { kreds, naira });
     return { ok: true, rate: { tokens: kreds, naira } };
   });
 
   route('GET', '/api/admin/ledger', async (c) => {
-    requireOwner(c);
-    const rows = db
+    await requireOwner(c);
+    const rows = (await db
       .prepare(`SELECT l.amount, l.reason, l.ref_type, l.ref_id, l.created_at, u.email
                 FROM ledger l JOIN users u ON u.id = l.user_id ORDER BY l.id DESC LIMIT 200`)
-      .all() as { amount: number; reason: string; ref_type: string | null; ref_id: string | null; created_at: string; email: string }[];
+      .all()) as { amount: number; reason: string; ref_type: string | null; ref_id: string | null; created_at: string; email: string }[];
     return { entries: rows.map((r) => ({ amount: r.amount, reason: r.reason, refType: r.ref_type, email: r.email, at: r.created_at })) };
   });
 
   route('GET', '/api/admin/audit', async (c) => {
-    requireOwner(c);
-    const rows = db
+    await requireOwner(c);
+    const rows = (await db
       .prepare(`SELECT a.action, a.target, a.meta, a.created_at, u.email AS actor
                 FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id ORDER BY a.id DESC LIMIT 200`)
-      .all() as { action: string; target: string | null; meta: string | null; created_at: string; actor: string | null }[];
+      .all()) as { action: string; target: string | null; meta: string | null; created_at: string; actor: string | null }[];
     return { entries: rows.map((r) => ({ action: r.action, target: r.target, meta: r.meta, actor: r.actor, at: r.created_at })) };
   });
 
   route('GET', '/api/admin/fraud', async (c) => {
-    const u = requireAdmin(c);
+    const u = await requireAdmin(c);
     if (u.role === 'support') throw new HttpError(403, 'Not allowed.');
-    const reusedProof = db
+    const reusedProof = (await db
       .prepare(`SELECT proof_hash, COUNT(*) AS c FROM submissions WHERE proof_hash IS NOT NULL GROUP BY proof_hash HAVING c > 1`)
-      .all() as { proof_hash: string; c: number }[];
-    const reusedHandle = db
+      .all()) as { proof_hash: string; c: number }[];
+    const reusedHandle = (await db
       .prepare(`SELECT LOWER(handle) AS h, COUNT(DISTINCT user_id) AS c FROM submissions WHERE handle IS NOT NULL GROUP BY LOWER(handle) HAVING c > 1`)
-      .all() as { h: string; c: number }[];
-    const notReceived = one(db, 'SELECT COUNT(*) AS n FROM withdrawals WHERE not_received = 1');
+      .all()) as { h: string; c: number }[];
+    const notReceived = await one(db, 'SELECT COUNT(*) AS n FROM withdrawals WHERE not_received = 1');
     return {
       reusedScreenshots: reusedProof.length,
       reusedHandles: reusedHandle.map((r) => ({ handle: r.h, accounts: r.c })),

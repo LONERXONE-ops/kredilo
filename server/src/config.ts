@@ -20,6 +20,16 @@ export const config = {
   supportEmail: (process.env.SUPPORT_EMAIL ?? 'krediloonline@gmail.com').trim(),
 };
 
+// Database connection for libSQL / Turso.
+//   • Production: set TURSO_DATABASE_URL (+ TURSO_AUTH_TOKEN) → connects to Turso cloud.
+//   • Local dev (Termux): neither set → a local SQLite file via libSQL (no network, no Turso needed).
+// The test suite passes its own { url: ':memory:' } and never reads this.
+export const dbConfig: { url: string; authToken?: string } = (() => {
+  const url = process.env.TURSO_DATABASE_URL?.trim();
+  if (url) return { url, authToken: process.env.TURSO_AUTH_TOKEN?.trim() };
+  return { url: `file:${config.dbPath}` };
+})();
+
 export type AppOptions = {
   ownerEmail: string;
   appOrigin: string;

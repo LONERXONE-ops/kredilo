@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
 import { avatarUrl } from './uploads.ts';
 import { promisify } from 'node:util';
-import type { Db } from './db.ts';
+import type { Queryable } from './db.ts';
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
 
@@ -37,19 +37,19 @@ function randomCode(len = 6): string {
 }
 
 // Returns the user's referral code, generating and saving one the first time.
-export function ensureReferralCode(db: Db, userId: string): string {
-  const row = db.prepare('SELECT referral_code FROM users WHERE id = ?').get(userId) as { referral_code: string | null } | undefined;
+export async function ensureReferralCode(db: Queryable, userId: string): Promise<string> {
+  const row = (await db.prepare('SELECT referral_code FROM users WHERE id = ?').get(userId)) as { referral_code: string | null } | undefined;
   if (row?.referral_code) return row.referral_code;
   let code = randomCode();
-  while (db.prepare('SELECT 1 FROM users WHERE referral_code = ?').get(code)) code = randomCode();
-  db.prepare('UPDATE users SET referral_code = ? WHERE id = ?').run(code, userId);
+  while (await db.prepare('SELECT 1 FROM users WHERE referral_code = ?').get(code)) code = randomCode();
+  await db.prepare('UPDATE users SET referral_code = ? WHERE id = ?').run(code, userId);
   return code;
 }
 
-export function findByReferralCode(db: Db, code: string): UserRow | undefined {
+export async function findByReferralCode(db: Queryable, code: string): Promise<UserRow | undefined> {
   const c = typeof code === 'string' ? code.trim().toUpperCase() : '';
   if (!c) return undefined;
-  return db.prepare('SELECT * FROM users WHERE referral_code = ?').get(c) as UserRow | undefined;
+  return (await db.prepare('SELECT * FROM users WHERE referral_code = ?').get(c)) as UserRow | undefined;
 }
 
 export async function hashPassword(pw: string): Promise<string> {
@@ -76,53 +76,53 @@ export const newId = () => randomUUID();
 const inDays = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString();
 const inMinutes = (m: number) => new Date(Date.now() + m * 60_000).toISOString();
 
-export function createSession(db: Db, userId: string): string {
+export async function createSession(db: Queryable, userId: string): Promise<string> {
   const token = newToken();
-  db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)').run(hashToken(token), userId, inDays(SESSION_DAYS));
+  await db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)').run(hashToken(token), userId, inDays(SESSION_DAYS));
   return token;
 }
 
-export function sessionUser(db: Db, token: string | undefined): UserRow | null {
+export async function sessionUser(db: Queryable, token: string | undefined): Promise<UserRow | null> {
   if (!token) return null;
-  const row = db
+  const row = (await db
     .prepare(
       `SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.token_hash = ? AND s.expires_at > ? AND u.status = 'active'`,
     )
-    .get(hashToken(token), new Date().toISOString()) as UserRow | undefined;
+    .get(hashToken(token), new Date().toISOString())) as UserRow | undefined;
   return row ?? null;
 }
 
-export function deleteSession(db: Db, token: string | undefined) {
-  if (token) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(hashToken(token));
+export async function deleteSession(db: Queryable, token: string | undefined) {
+  if (token) await db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(hashToken(token));
 }
 
-export function deleteUserSessions(db: Db, userId: string) {
-  db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+export async function deleteUserSessions(db: Queryable, userId: string) {
+  await db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
 }
 
-export function createEmailToken(db: Db, userId: string, purpose: 'verify_email' | 'reset_password'): string {
+export async function createEmailToken(db: Queryable, userId: string, purpose: 'verify_email' | 'reset_password'): Promise<string> {
   const token = newToken();
   const minutes = purpose === 'verify_email' ? 60 * 24 : 60;
-  db.prepare('INSERT INTO email_tokens (token_hash, user_id, purpose, expires_at) VALUES (?, ?, ?, ?)').run(hashToken(token), userId, purpose, inMinutes(minutes));
+  await db.prepare('INSERT INTO email_tokens (token_hash, user_id, purpose, expires_at) VALUES (?, ?, ?, ?)').run(hashToken(token), userId, purpose, inMinutes(minutes));
   return token;
 }
 
 // Checks a token without using it up (so a rejected form does not burn the link).
-export function peekEmailToken(db: Db, token: string, purpose: 'verify_email' | 'reset_password'): string | null {
-  const row = db
+export async function peekEmailToken(db: Queryable, token: string, purpose: 'verify_email' | 'reset_password'): Promise<string | null> {
+  const row = (await db
     .prepare('SELECT user_id FROM email_tokens WHERE token_hash = ? AND purpose = ? AND used_at IS NULL AND expires_at > ?')
-    .get(hashToken(token), purpose, new Date().toISOString()) as { user_id: string } | undefined;
+    .get(hashToken(token), purpose, new Date().toISOString())) as { user_id: string } | undefined;
   return row?.user_id ?? null;
 }
 
 // Returns the user id if the token is valid, unused and unexpired, and marks it used. One use only.
-export function consumeEmailToken(db: Db, token: string, purpose: 'verify_email' | 'reset_password'): string | null {
-  const row = db
+export async function consumeEmailToken(db: Queryable, token: string, purpose: 'verify_email' | 'reset_password'): Promise<string | null> {
+  const row = (await db
     .prepare('SELECT user_id FROM email_tokens WHERE token_hash = ? AND purpose = ? AND used_at IS NULL AND expires_at > ?')
-    .get(hashToken(token), purpose, new Date().toISOString()) as { user_id: string } | undefined;
+    .get(hashToken(token), purpose, new Date().toISOString())) as { user_id: string } | undefined;
   if (!row) return null;
-  const res = db.prepare('UPDATE email_tokens SET used_at = ? WHERE token_hash = ? AND used_at IS NULL').run(new Date().toISOString(), hashToken(token));
+  const res = await db.prepare('UPDATE email_tokens SET used_at = ? WHERE token_hash = ? AND used_at IS NULL').run(new Date().toISOString(), hashToken(token));
   return res.changes === 1 ? row.user_id : null;
 }
 
@@ -161,21 +161,21 @@ export function validUsername(v: unknown): string | null {
 }
 
 // Case-insensitive check for whether a username is already taken (optionally ignoring one user).
-export function usernameTaken(db: Db, username: string, exceptId?: string): boolean {
+export async function usernameTaken(db: Queryable, username: string, exceptId?: string): Promise<boolean> {
   const row = exceptId
-    ? db.prepare('SELECT 1 FROM users WHERE lower(username) = ? AND id != ?').get(username, exceptId)
-    : db.prepare('SELECT 1 FROM users WHERE lower(username) = ?').get(username);
+    ? await db.prepare('SELECT 1 FROM users WHERE lower(username) = ? AND id != ?').get(username, exceptId)
+    : await db.prepare('SELECT 1 FROM users WHERE lower(username) = ?').get(username);
   return !!row;
 }
 
 // Fallback username from an email prefix when none was chosen (API callers without the UI).
 // Always valid (3-20 chars) and unique.
-export function autoUsername(db: Db, email: string): string {
+export async function autoUsername(db: Queryable, email: string): Promise<string> {
   let base = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
   if (base.length < 3) base = (base + 'user').slice(0, 10);
   base = base.slice(0, 15);
   let candidate = base;
   let n = 0;
-  while (usernameTaken(db, candidate)) candidate = `${base}${++n}`.slice(0, 20);
+  while (await usernameTaken(db, candidate)) candidate = `${base}${++n}`.slice(0, 20);
   return candidate;
 }

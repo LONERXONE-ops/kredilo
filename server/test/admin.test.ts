@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { setup } from './helpers.ts';
 
 const OWNER = 'owner@example.com';
-const count = (t: Awaited<ReturnType<typeof setup>>, action: string) =>
-  (t.db.prepare('SELECT COUNT(*) AS n FROM audit_log WHERE action = ?').get(action) as { n: number }).n;
+const count = async (t: Awaited<ReturnType<typeof setup>>, action: string) =>
+  ((await t.db.prepare('SELECT COUNT(*) AS n FROM audit_log WHERE action = ?').get(action)) as { n: number }).n;
 
 async function invite(t: Awaited<ReturnType<typeof setup>>, ownerCookie: string, email: string, role = 'reviewer') {
   const r = await t.call('POST', '/api/admin/invites', { email, role }, ownerCookie);
@@ -28,7 +28,7 @@ test('owner invites someone; the link only works for that email and only once', 
   const { r, token } = await invite(t, owner, 'Helper@Example.com', 'reviewer');
   assert.equal(r.status, 200);
   assert.ok(token.length > 20);
-  assert.equal(count(t, 'admin.invite.create'), 1);
+  assert.equal(await count(t, 'admin.invite.create'), 1);
 
   const wrong = await t.makeUser('someone-else@example.com');
   assert.equal((await t.call('POST', '/api/admin/invites/accept', { token }, wrong)).status, 403);
@@ -39,7 +39,7 @@ test('owner invites someone; the link only works for that email and only once', 
   assert.equal(ok.json.role, 'reviewer');
   assert.equal((await t.call('GET', '/api/auth/me', undefined, helper)).json.user.role, 'reviewer');
   assert.equal((await t.call('POST', '/api/admin/invites/accept', { token }, helper)).status, 400);
-  assert.equal(count(t, 'admin.invite.accept'), 1);
+  assert.equal(await count(t, 'admin.invite.accept'), 1);
   t.close();
 });
 
@@ -47,7 +47,7 @@ test('invite token is stored hashed, never in plain text', async () => {
   const t = await setup();
   const owner = await t.makeUser(OWNER);
   const { token } = await invite(t, owner, 'a@example.com');
-  const rows = JSON.stringify(t.db.prepare('SELECT * FROM admin_invites').all());
+  const rows = JSON.stringify(await t.db.prepare('SELECT * FROM admin_invites').all());
   assert.equal(rows.includes(token), false);
   t.close();
 });
@@ -63,7 +63,7 @@ test('unverified email, unauthenticated, expired and revoked invitations are ref
 
   const b = await invite(t, owner, 'expired@example.com');
   const expired = await t.makeUser('expired@example.com');
-  t.db.prepare("UPDATE admin_invites SET expires_at = '2000-01-01T00:00:00.000Z' WHERE email = 'expired@example.com'").run();
+  await t.db.prepare("UPDATE admin_invites SET expires_at = '2000-01-01T00:00:00.000Z' WHERE email = 'expired@example.com'").run();
   assert.equal((await t.call('POST', '/api/admin/invites/accept', { token: b.token }, expired)).status, 400);
 
   const c = await invite(t, owner, 'revoked@example.com');
@@ -72,7 +72,7 @@ test('unverified email, unauthenticated, expired and revoked invitations are ref
   const id = list.json.invites.find((i: { email: string }) => i.email === 'revoked@example.com').id;
   assert.equal((await t.call('POST', '/api/admin/invites/revoke', { id }, owner)).status, 200);
   assert.equal((await t.call('POST', '/api/admin/invites/accept', { token: c.token }, revoked)).status, 400);
-  assert.equal(count(t, 'admin.invite.revoke'), 1);
+  assert.equal(await count(t, 'admin.invite.revoke'), 1);
   t.close();
 });
 
@@ -133,8 +133,8 @@ test('owner can change a role and remove an admin; access ends immediately', asy
   assert.equal((await t.call('POST', '/api/admin/team/role', { userId: ownerId, role: 'support' }, owner)).status, 404);
   assert.equal((await t.call('POST', '/api/admin/team/remove', { userId: rid }, owner)).status, 404);
   assert.equal((await t.call('GET', '/api/auth/me', undefined, owner)).json.user.role, 'owner');
-  assert.equal(count(t, 'admin.role.change'), 1);
-  assert.equal(count(t, 'admin.remove'), 1);
+  assert.equal(await count(t, 'admin.role.change'), 1);
+  assert.equal(await count(t, 'admin.remove'), 1);
   t.close();
 });
 
@@ -158,6 +158,6 @@ test('an invitation can never make a second owner', async () => {
   const { token } = await invite(t, owner, 'a@example.com');
   const a = await t.makeUser('a@example.com');
   await t.call('POST', '/api/admin/invites/accept', { token }, a);
-  assert.equal((t.db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'owner'").get() as { n: number }).n, 1);
+  assert.equal(((await t.db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'owner'").get()) as { n: number }).n, 1);
   t.close();
 });

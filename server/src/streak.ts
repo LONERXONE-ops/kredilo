@@ -8,7 +8,7 @@ import { creditReward, LedgerError } from './ledger.ts';
 type Deps = {
   db: Db;
   route: (method: string, path: string, h: (c: Ctx) => Promise<unknown>) => void;
-  requireUser: (c: Ctx) => UserRow;
+  requireUser: (c: Ctx) => Promise<UserRow>;
 };
 
 const BASE = 2;   // kreds on day 1
@@ -21,12 +21,12 @@ const rewardFor = (streak: number) => Math.min(BASE + (streak - 1), CAP);
 type SRow = { streak: number; last_streak_day: string | null };
 
 export function streakRoutes({ db, route, requireUser }: Deps) {
-  const read = (userId: string): SRow =>
-    db.prepare('SELECT streak, last_streak_day FROM users WHERE id = ?').get(userId) as SRow;
+  const read = async (userId: string): Promise<SRow> =>
+    (await db.prepare('SELECT streak, last_streak_day FROM users WHERE id = ?').get(userId)) as SRow;
 
   route('GET', '/api/streak/status', async (c) => {
-    const u = requireUser(c);
-    const s = read(u.id);
+    const u = await requireUser(c);
+    const s = await read(u.id);
     const today = day(0), yesterday = day(-1);
     const claimedToday = s.last_streak_day === today;
     // The streak the user is actually on: broken (0) unless they claimed today or yesterday.
@@ -36,15 +36,15 @@ export function streakRoutes({ db, route, requireUser }: Deps) {
   });
 
   route('POST', '/api/streak/claim', async (c) => {
-    const u = requireUser(c);
+    const u = await requireUser(c);
     const today = day(0), yesterday = day(-1);
-    const s = read(u.id);
+    const s = await read(u.id);
     if (s.last_streak_day === today) return { already: true, streak: s.streak };
 
     const newStreak = s.last_streak_day === yesterday ? s.streak + 1 : 1;
     const kreds = rewardFor(newStreak);
     try {
-      creditReward(db, {
+      await creditReward(db, {
         userId: u.id, tokens: kreds, refType: 'streak', refId: today,
         idempotencyKey: `streak:${u.id}:${today}`, fromReserve: true, actorId: u.id,
       });
@@ -53,8 +53,8 @@ export function streakRoutes({ db, route, requireUser }: Deps) {
       if (e instanceof LedgerError && e.code === 'reserve_exhausted') throw new HttpError(409, 'Daily rewards are temporarily unavailable. Try again later.');
       throw e;
     }
-    db.prepare('UPDATE users SET streak = ?, last_streak_day = ? WHERE id = ?').run(newStreak, today, u.id);
-    audit(db, u.id, 'streak.claim', today, { streak: newStreak, kreds });
+    await db.prepare('UPDATE users SET streak = ?, last_streak_day = ? WHERE id = ?').run(newStreak, today, u.id);
+    await audit(db, u.id, 'streak.claim', today, { streak: newStreak, kreds });
     return { already: false, streak: newStreak, kreds };
   });
 }

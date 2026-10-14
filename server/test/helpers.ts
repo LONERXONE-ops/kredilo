@@ -3,13 +3,20 @@ import { createApp } from '../src/app.ts';
 import { openDb } from '../src/db.ts';
 import { resetLimits } from '../src/http.ts';
 
+// Tests run hermetically against the local filesystem — never a real Cloudinary
+// account — even when the dev .env has Cloudinary keys set. (cloudinary.ts reads
+// these live, so clearing them here forces the local upload/serve path.)
+delete process.env.CLOUDINARY_CLOUD_NAME;
+delete process.env.CLOUDINARY_API_KEY;
+delete process.env.CLOUDINARY_API_SECRET;
+
 export type Mail = { to: string; subject: string; text: string };
 export const ORIGIN = 'http://localhost:5173';
 export const PW = 'correct horse battery';
 
 export async function setup(ownerEmail = 'owner@example.com') {
   resetLimits();
-  const db = openDb(':memory:');
+  const db = await openDb({ url: ':memory:' });
   const mails: Mail[] = [];
   const server = createApp(db, { ownerEmail, appOrigin: ORIGIN, allowedOrigins: [ORIGIN], isProd: false, sendMail: (m) => void mails.push(m) });
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));

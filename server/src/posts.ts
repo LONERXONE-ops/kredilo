@@ -11,7 +11,7 @@ import { notify } from './notifications.ts';
 type Deps = {
   db: Db;
   route: (method: string, path: string, h: (c: Ctx) => Promise<unknown>) => void;
-  requireUser: (c: Ctx) => UserRow;
+  requireUser: (c: Ctx) => Promise<UserRow>;
 };
 
 const CATEGORIES = ['Social Media', 'Surveys', 'Apps & Sign Ups', 'Content Creation', 'Gaming', 'Shopping & Offers', 'Research & Reviews', 'Other'];
@@ -23,13 +23,13 @@ export const MAX_POST_DAYS = 10;
 const DEFAULT_PRICE_PER_DAY = 1000; // naira
 const DEFAULT_TOKENS_PER_DAY = 30;
 
-function flag(db: Db, key: string): string | null {
-  const r = db.prepare('SELECT value FROM platform_flags WHERE key = ? ORDER BY id DESC LIMIT 1').get(key) as { value: string | null } | undefined;
+async function flag(db: Db, key: string): Promise<string | null> {
+  const r = (await db.prepare('SELECT value FROM platform_flags WHERE key = ? ORDER BY id DESC LIMIT 1').get(key)) as { value: string | null } | undefined;
   return r?.value ?? null;
 }
-function postRate(db: Db): { perDayNaira: number; perDayTokens: number } {
-  const n = Number(flag(db, 'post_price_per_day'));
-  const t = Number(flag(db, 'post_tokens_per_day'));
+async function postRate(db: Db): Promise<{ perDayNaira: number; perDayTokens: number }> {
+  const n = Number(await flag(db, 'post_price_per_day'));
+  const t = Number(await flag(db, 'post_tokens_per_day'));
   return {
     perDayNaira: Number.isFinite(n) && n > 0 ? n : DEFAULT_PRICE_PER_DAY,
     perDayTokens: Number.isFinite(t) && t > 0 ? t : DEFAULT_TOKENS_PER_DAY,
@@ -38,18 +38,18 @@ function postRate(db: Db): { perDayNaira: number; perDayTokens: number } {
 
 // Close out posted tasks whose paid run has ended, and remove them so they drop off every view.
 // Ledger credits already earned are untouched; only the task and its submissions go.
-export function sweepExpiredPosts(db: Db): number {
-  const expired = db.prepare("SELECT id FROM tasks WHERE kind = 'posted' AND status IN ('live','closed') AND expires_at IS NOT NULL AND expires_at < ?").all(new Date().toISOString()) as { id: string }[];
+export async function sweepExpiredPosts(db: Db): Promise<number> {
+  const expired = (await db.prepare("SELECT id FROM tasks WHERE kind = 'posted' AND status IN ('live','closed') AND expires_at IS NOT NULL AND expires_at < ?").all(new Date().toISOString())) as { id: string }[];
   let removed = 0;
   for (const t of expired) {
-    db.exec('BEGIN IMMEDIATE');
+    const tx = await db.begin();
     try {
-      db.prepare('DELETE FROM submissions WHERE task_id = ?').run(t.id);
-      db.prepare('DELETE FROM tasks WHERE id = ?').run(t.id);
-      db.exec('COMMIT');
+      await tx.prepare('DELETE FROM submissions WHERE task_id = ?').run(t.id);
+      await tx.prepare('DELETE FROM tasks WHERE id = ?').run(t.id);
+      await tx.commit();
       removed++;
     } catch {
-      db.exec('ROLLBACK');
+      await tx.rollback();
     }
   }
   return removed;
@@ -67,9 +67,9 @@ type SubRow = {
 };
 
 export function postRoutes({ db, route, requireUser }: Deps) {
-  const getTask = (id: string) => db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as TaskRow | undefined;
-  const requireAdmin = (c: Ctx): UserRow => {
-    const u = requireUser(c);
+  const getTask = async (id: string) => (await db.prepare('SELECT * FROM tasks WHERE id = ?').get(id)) as TaskRow | undefined;
+  const requireAdmin = async (c: Ctx): Promise<UserRow> => {
+    const u = await requireUser(c);
     if (u.role === 'user') throw new HttpError(403, 'Admins only.');
     return u;
   };
@@ -82,8 +82,8 @@ export function postRoutes({ db, route, requireUser }: Deps) {
   });
 
   route('GET', '/api/post/pricing', async (c) => {
-    requireUser(c);
-    const rate = postRate(db);
+    await requireUser(c);
+    const rate = await postRate(db);
     return {
       perDayNaira: rate.perDayNaira,
       perDayTokens: rate.perDayTokens,
@@ -98,20 +98,20 @@ export function postRoutes({ db, route, requireUser }: Deps) {
   });
 
   route('POST', '/api/admin/post-rate', async (c) => {
-    const u = requireUser(c);
+    const u = await requireUser(c);
     if (u.role !== 'owner') throw new HttpError(403, 'Only the owner can change this.');
     const naira = int(c.body.perDayNaira);
     const tokens = int(c.body.perDayTokens);
     if (!Number.isInteger(naira) || naira <= 0) throw new HttpError(400, 'Enter a valid price per day.');
     if (!Number.isInteger(tokens) || tokens <= 0) throw new HttpError(400, 'Enter a valid token reward per day.');
-    db.prepare('INSERT INTO platform_flags (key, value, updated_by) VALUES (?, ?, ?)').run('post_price_per_day', String(naira), u.id);
-    db.prepare('INSERT INTO platform_flags (key, value, updated_by) VALUES (?, ?, ?)').run('post_tokens_per_day', String(tokens), u.id);
-    audit(db, u.id, 'post.rate', null, { naira, tokens });
+    await db.prepare('INSERT INTO platform_flags (key, value, updated_by) VALUES (?, ?, ?)').run('post_price_per_day', String(naira), u.id);
+    await db.prepare('INSERT INTO platform_flags (key, value, updated_by) VALUES (?, ?, ?)').run('post_tokens_per_day', String(tokens), u.id);
+    await audit(db, u.id, 'post.rate', null, { naira, tokens });
     return { ok: true, perDayNaira: naira, perDayTokens: tokens };
   });
 
   route('POST', '/api/post/create', async (c) => {
-    const u = requireUser(c);
+    const u = await requireUser(c);
     const title = str(c.body.title, 120);
     const description = str(c.body.description, 2000);
     const category = CATEGORIES.includes(str(c.body.category, 40)) ? str(c.body.category, 40) : 'Other';
@@ -122,7 +122,7 @@ export function postRoutes({ db, route, requireUser }: Deps) {
     if (!Number.isInteger(maxCompletions) || maxCompletions <= 0) throw new HttpError(400, 'Set how many people can do the task.');
     if (!Number.isInteger(days) || days < 1 || days > MAX_POST_DAYS) throw new HttpError(400, `Choose between 1 and ${MAX_POST_DAYS} days.`);
 
-    const rate = postRate(db);
+    const rate = await postRate(db);
     const priceNaira = days * rate.perDayNaira;
     const rewardTokens = days * rate.perDayTokens;
 
@@ -134,26 +134,28 @@ export function postRoutes({ db, route, requireUser }: Deps) {
 
     const pool = rewardTokens * maxCompletions;
     const id = newId();
-    db.prepare(
-      `INSERT INTO tasks (id, kind, title, description, category, reward_tokens, proof_type, needs_handle, photo_file, link_url,
+    await db
+      .prepare(
+        `INSERT INTO tasks (id, kind, title, description, category, reward_tokens, proof_type, needs_handle, photo_file, link_url,
         max_completions, status, created_by, pool_tokens, price_naira, days, receipt_file)
        VALUES (?, 'posted', ?, ?, ?, ?, 'screenshot', ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?)`,
-    ).run(id, title, description, category, rewardTokens, needsHandle, photo, link, maxCompletions, u.id, pool, priceNaira, days, receipt);
-    audit(db, u.id, 'post.create', id, { days, price: priceNaira, pool });
+      )
+      .run(id, title, description, category, rewardTokens, needsHandle, photo, link, maxCompletions, u.id, pool, priceNaira, days, receipt);
+    await audit(db, u.id, 'post.create', id, { days, price: priceNaira, pool });
     return { id, status: 'pending_payment', priceNaira, reward: rewardTokens, pool };
   });
 
   route('GET', '/api/post/mine', async (c) => {
-    const u = requireUser(c);
-    const tasks = db.prepare("SELECT * FROM tasks WHERE kind = 'posted' AND created_by = ? ORDER BY created_at DESC").all(u.id) as TaskRow[];
+    const u = await requireUser(c);
+    const tasks = (await db.prepare("SELECT * FROM tasks WHERE kind = 'posted' AND created_by = ? ORDER BY created_at DESC").all(u.id)) as TaskRow[];
     return { tasks: tasks.map(posterView) };
   });
 
   route('GET', '/api/post/doers', async (c) => {
-    const u = requireUser(c);
-    const task = getTask(str(c.query.taskId, 64));
+    const u = await requireUser(c);
+    const task = await getTask(str(c.query.taskId, 64));
     if (!task || task.created_by !== u.id) throw new HttpError(404, 'Task not found.');
-    const subs = db.prepare("SELECT id, status, handle, proof_file, submitted_at FROM submissions WHERE task_id = ? ORDER BY created_at").all(task.id) as SubRow[];
+    const subs = (await db.prepare("SELECT id, status, handle, proof_file, submitted_at FROM submissions WHERE task_id = ? ORDER BY created_at").all(task.id)) as SubRow[];
     const ongoing = subs.filter((s) => s.status === 'in_progress');
     const done = subs.filter((s) => s.status === 'pending_review' || s.status === 'approved');
     const view = (s: SubRow) => ({ id: s.id, status: s.status, handle: s.handle, proofFile: s.proof_file, submittedAt: s.submitted_at });
@@ -161,8 +163,8 @@ export function postRoutes({ db, route, requireUser }: Deps) {
   });
 
   route('GET', '/api/admin/posts', async (c) => {
-    requireAdmin(c);
-    const rows = db.prepare("SELECT * FROM tasks WHERE kind = 'posted' AND status = 'pending_payment' ORDER BY created_at").all() as TaskRow[];
+    await requireAdmin(c);
+    const rows = (await db.prepare("SELECT * FROM tasks WHERE kind = 'posted' AND status = 'pending_payment' ORDER BY created_at").all()) as TaskRow[];
     return {
       posts: rows.map((t) => ({
         id: t.id, title: t.title, description: t.description, category: t.category, reward: t.reward_tokens,
@@ -173,25 +175,25 @@ export function postRoutes({ db, route, requireUser }: Deps) {
   });
 
   route('POST', '/api/admin/posts/confirm', async (c) => {
-    const admin = requireAdmin(c);
+    const admin = await requireAdmin(c);
     const note = str(c.body.note, 300);
-    const task = getTask(str(c.body.taskId, 64));
+    const task = await getTask(str(c.body.taskId, 64));
     if (!task || task.kind !== 'posted') throw new HttpError(404, 'Posted task not found.');
     if (task.status !== 'pending_payment') throw new HttpError(409, 'This task is not awaiting payment.');
 
     const expiresAt = new Date(Date.now() + (task.days ?? 1) * 86_400_000).toISOString();
-    db.exec('BEGIN IMMEDIATE');
+    const tx = await db.begin();
     try {
-      const already = db.prepare("SELECT 1 FROM reserve WHERE reason = 'post_payment' AND ref_id = ?").get(task.id);
-      if (!already) db.prepare("INSERT INTO reserve (amount, reason, ref_type, ref_id) VALUES (?, 'post_payment', 'posted_task', ?)").run(task.pool_tokens, task.id);
-      db.prepare("UPDATE tasks SET status = 'live', payment_note = ?, expires_at = ? WHERE id = ? AND status = 'pending_payment'").run(note || null, expiresAt, task.id);
-      audit(db, admin.id, 'post.confirm', task.id, { pool: task.pool_tokens });
-      db.exec('COMMIT');
+      const already = await tx.prepare("SELECT 1 FROM reserve WHERE reason = 'post_payment' AND ref_id = ?").get(task.id);
+      if (!already) await tx.prepare("INSERT INTO reserve (amount, reason, ref_type, ref_id) VALUES (?, 'post_payment', 'posted_task', ?)").run(task.pool_tokens, task.id);
+      await tx.prepare("UPDATE tasks SET status = 'live', payment_note = ?, expires_at = ? WHERE id = ? AND status = 'pending_payment'").run(note || null, expiresAt, task.id);
+      await audit(tx, admin.id, 'post.confirm', task.id, { pool: task.pool_tokens });
+      await tx.commit();
     } catch (e) {
-      db.exec('ROLLBACK');
+      await tx.rollback();
       throw e;
     }
-    notify(db, task.created_by, {
+    await notify(db, task.created_by, {
       type: 'post_live', title: 'Your task is live ✅',
       body: `"${task.title}" is now live for doers.`, refType: 'task', refId: task.id,
     });
@@ -199,15 +201,15 @@ export function postRoutes({ db, route, requireUser }: Deps) {
   });
 
   route('POST', '/api/admin/posts/reject', async (c) => {
-    const admin = requireAdmin(c);
+    const admin = await requireAdmin(c);
     const note = str(c.body.note, 300);
     if (!note) throw new HttpError(400, 'Give a reason so the poster knows why.');
-    const task = getTask(str(c.body.taskId, 64));
+    const task = await getTask(str(c.body.taskId, 64));
     if (!task || task.kind !== 'posted') throw new HttpError(404, 'Posted task not found.');
     if (task.status !== 'pending_payment') throw new HttpError(409, 'This task is not awaiting payment.');
-    db.prepare("UPDATE tasks SET status = 'rejected', payment_note = ? WHERE id = ?").run(note, task.id);
-    audit(db, admin.id, 'post.reject', task.id);
-    notify(db, task.created_by, {
+    await db.prepare("UPDATE tasks SET status = 'rejected', payment_note = ? WHERE id = ?").run(note, task.id);
+    await audit(db, admin.id, 'post.reject', task.id);
+    await notify(db, task.created_by, {
       type: 'post_rejected', title: 'Posted task declined',
       body: `"${task.title}" was not approved: ${note}`, refType: 'task', refId: task.id,
     });

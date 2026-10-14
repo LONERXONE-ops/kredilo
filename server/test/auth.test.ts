@@ -10,7 +10,7 @@ const ORIGIN = 'http://localhost:5173';
 
 async function setup(ownerEmail = 'owner@example.com') {
   resetLimits();
-  const db = openDb(':memory:');
+  const db = await openDb({ url: ':memory:' });
   const mails: Mail[] = [];
   const server = createApp(db, {
     ownerEmail,
@@ -66,7 +66,7 @@ test('duplicate email (any case) is rejected; weak password and bad email are re
 test('password is stored hashed, never in plain text', async () => {
   const t = await setup();
   await t.call('POST', '/api/auth/signup', { email: 'h@example.com', password: PW });
-  const row = t.db.prepare('SELECT password_hash FROM users').get() as { password_hash: string };
+  const row = (await t.db.prepare('SELECT password_hash FROM users').get()) as { password_hash: string };
   assert.ok(row.password_hash.startsWith('scrypt$'));
   assert.equal(row.password_hash.includes(PW), false);
   t.close();
@@ -118,17 +118,17 @@ test('only the configured owner email becomes owner, and only after verifying', 
   await t.call('POST', '/api/auth/verify', { token: t.tokenFrom(t.mails[1]) });
   const me = await t.call('GET', '/api/auth/me', undefined, { cookie: owner.cookie });
   assert.equal(me.json.user.role, 'owner');
-  assert.equal(t.db.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action = 'owner.bootstrap'").get()!.n, 1);
+  assert.equal(((await t.db.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action = 'owner.bootstrap'").get()) as { n: number }).n, 1);
   t.close();
 });
 
 test('owner bootstrap never creates a second owner', async () => {
   const t = await setup('owner@example.com');
   const a = await t.call('POST', '/api/auth/signup', { email: 'first@example.com', password: PW });
-  t.db.prepare("UPDATE users SET role = 'owner' WHERE email = 'first@example.com'").run();
+  await t.db.prepare("UPDATE users SET role = 'owner' WHERE email = 'first@example.com'").run();
   await t.call('POST', '/api/auth/signup', { email: 'owner@example.com', password: PW });
   await t.call('POST', '/api/auth/verify', { token: t.tokenFrom(t.mails[1]) });
-  assert.equal(t.db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'owner'").get()!.n, 1);
+  assert.equal(((await t.db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'owner'").get()) as { n: number }).n, 1);
   assert.equal(a.status, 200);
   t.close();
 });
@@ -172,9 +172,9 @@ test('login is rate limited', async () => {
 test('audit log is append-only', async () => {
   const t = await setup();
   await t.call('POST', '/api/auth/signup', { email: 'a@example.com', password: PW });
-  assert.ok((t.db.prepare('SELECT COUNT(*) AS n FROM audit_log').get() as { n: number }).n >= 1);
-  assert.throws(() => t.db.prepare("UPDATE audit_log SET action = 'x'").run(), /append-only/);
-  assert.throws(() => t.db.prepare('DELETE FROM audit_log').run(), /append-only/);
+  assert.ok(((await t.db.prepare('SELECT COUNT(*) AS n FROM audit_log').get()) as { n: number }).n >= 1);
+  await assert.rejects(t.db.prepare("UPDATE audit_log SET action = 'x'").run(), /append-only/);
+  await assert.rejects(t.db.prepare('DELETE FROM audit_log').run(), /append-only/);
   t.close();
 });
 
@@ -189,7 +189,7 @@ test('oversized and non-JSON bodies are refused', async () => {
 test('suspended users cannot log in and their sessions stop working', async () => {
   const t = await setup();
   const s = await t.call('POST', '/api/auth/signup', { email: 'a@example.com', password: PW });
-  t.db.prepare("UPDATE users SET status = 'suspended'").run();
+  await t.db.prepare("UPDATE users SET status = 'suspended'").run();
   assert.equal((await t.call('GET', '/api/auth/me', undefined, { cookie: s.cookie })).json.user, null);
   assert.equal((await t.call('POST', '/api/auth/login', { email: 'a@example.com', password: PW })).status, 403);
   t.close();

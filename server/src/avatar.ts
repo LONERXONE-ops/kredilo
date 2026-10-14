@@ -7,25 +7,27 @@ import { readLocalAvatar, saveAvatar } from './uploads.ts';
 type Deps = {
   db: Db;
   route: (method: string, path: string, h: (c: Ctx) => Promise<unknown>) => void;
-  requireUser: (c: Ctx) => UserRow;
+  requireUser: (c: Ctx) => Promise<UserRow>;
 };
 
 const str = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
 export function avatarRoutes({ db, route, requireUser }: Deps) {
+  // Upload or replace your own profile picture.
   route('POST', '/api/avatar', async (c) => {
-    const u = requireUser(c);
+    const u = await requireUser(c);
     const { ref } = await saveAvatar(c.body.image, u.id);
-    db.prepare('UPDATE users SET avatar_ref = ? WHERE id = ?').run(ref, u.id);
+    await db.prepare('UPDATE users SET avatar_ref = ? WHERE id = ?').run(ref, u.id);
     return { ok: true };
   });
 
   route('POST', '/api/avatar/remove', async (c) => {
-    const u = requireUser(c);
-    db.prepare('UPDATE users SET avatar_ref = NULL WHERE id = ?').run(u.id);
+    const u = await requireUser(c);
+    await db.prepare('UPDATE users SET avatar_ref = NULL WHERE id = ?').run(u.id);
     return { ok: true };
   });
 
+  // Serve a locally-stored avatar (public, so no auth needed; Cloudinary avatars load directly).
   route('GET', '/api/avatar', async (c) => {
     const file = str(c.query.file, 100);
     const img = readLocalAvatar(file);

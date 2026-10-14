@@ -32,33 +32,33 @@ export function createApp(db: Db, o: AppOptions): Server {
   const setSession = (c: Ctx, token: string) =>
     c.res.setHeader('Set-Cookie', cookie(SESSION_COOKIE, token, { maxAgeSec: maxAge, secure: o.isProd }));
   const clearSession = (c: Ctx) => c.res.setHeader('Set-Cookie', cookie(SESSION_COOKIE, '', { maxAgeSec: 0, secure: o.isProd }));
-  const currentUser = (c: Ctx): UserRow | null => sessionUser(db, c.cookies[SESSION_COOKIE]);
-  const requireUser = (c: Ctx): UserRow => {
-    const u = currentUser(c);
+  const currentUser = (c: Ctx): Promise<UserRow | null> => sessionUser(db, c.cookies[SESSION_COOKIE]);
+  const requireUser = async (c: Ctx): Promise<UserRow> => {
+    const u = await currentUser(c);
     if (!u) throw new HttpError(401, 'Please log in.');
     return u;
   };
   const tooMany = () => new HttpError(429, 'Too many attempts. Please wait a few minutes and try again.');
 
   // First owner: only the configured OWNER_EMAIL, only after it is verified, only if no owner exists yet.
-  const maybePromoteOwner = (u: UserRow) => {
+  const maybePromoteOwner = async (u: UserRow) => {
     if (!o.ownerEmail || u.email !== o.ownerEmail) return;
-    db.exec('BEGIN IMMEDIATE');
+    const tx = await db.begin();
     try {
-      const has = db.prepare("SELECT 1 FROM users WHERE role = 'owner'").get();
+      const has = await tx.prepare("SELECT 1 FROM users WHERE role = 'owner'").get();
       if (!has) {
-        db.prepare("UPDATE users SET role = 'owner' WHERE id = ? AND email_verified_at IS NOT NULL").run(u.id);
-        audit(db, u.id, 'owner.bootstrap', u.id);
+        await tx.prepare("UPDATE users SET role = 'owner' WHERE id = ? AND email_verified_at IS NOT NULL").run(u.id);
+        await audit(tx, u.id, 'owner.bootstrap', u.id);
       }
-      db.exec('COMMIT');
+      await tx.commit();
     } catch (e) {
-      db.exec('ROLLBACK');
+      await tx.rollback();
       throw e;
     }
   };
 
-  const sendVerify = (u: UserRow) => {
-    const token = createEmailToken(db, u.id, 'verify_email');
+  const sendVerify = async (u: UserRow) => {
+    const token = await createEmailToken(db, u.id, 'verify_email');
     o.sendMail({ to: u.email, subject: 'Verify your Kredilo email', text: `Open this link to verify your email:\n${o.appOrigin}/verify-email?token=${token}` });
   };
 
@@ -88,24 +88,24 @@ export function createApp(db: Db, o: AppOptions): Server {
     if (provided && !chosen) throw new HttpError(400, 'Username must be 3-20 characters: lowercase letters, numbers or underscores.');
     const problem = passwordProblem(c.body.password, email);
     if (problem) throw new HttpError(400, problem);
-    if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) throw new HttpError(409, 'An account with this email already exists.');
-    if (chosen && usernameTaken(db, chosen)) throw new HttpError(409, 'That username is already taken.');
-    const username = chosen ?? autoUsername(db, email);
+    if (await db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) throw new HttpError(409, 'An account with this email already exists.');
+    if (chosen && (await usernameTaken(db, chosen))) throw new HttpError(409, 'That username is already taken.');
+    const username = chosen ?? (await autoUsername(db, email));
     // Referral is optional — but if a code IS entered, it must be a real one.
     const refRaw = typeof c.body.referralCode === 'string' ? c.body.referralCode.trim() : '';
     let referrer: UserRow | undefined;
     if (refRaw) {
-      referrer = findByReferralCode(db, refRaw);
+      referrer = await findByReferralCode(db, refRaw);
       if (!referrer) throw new HttpError(400, 'That referral code isn’t valid. Leave it blank if no one invited you.');
     }
     const id = newId();
-    db.prepare('INSERT INTO users (id, email, username, password_hash, referred_by) VALUES (?, ?, ?, ?, ?)')
+    await db.prepare('INSERT INTO users (id, email, username, password_hash, referred_by) VALUES (?, ?, ?, ?, ?)')
       .run(id, email, username, await hashPassword(c.body.password as string), referrer?.id ?? null);
-    ensureReferralCode(db, id);
-    audit(db, id, 'user.signup', id, referrer ? { referredBy: referrer.id } : undefined);
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow;
-    sendVerify(user);
-    setSession(c, createSession(db, id));
+    await ensureReferralCode(db, id);
+    await audit(db, id, 'user.signup', id, referrer ? { referredBy: referrer.id } : undefined);
+    const user = (await db.prepare('SELECT * FROM users WHERE id = ?').get(id)) as UserRow;
+    await sendVerify(user);
+    setSession(c, await createSession(db, id));
     return { user: publicUser(user) };
   });
 
@@ -113,49 +113,49 @@ export function createApp(db: Db, o: AppOptions): Server {
     const email = validEmail(c.body.email);
     const password = typeof c.body.password === 'string' ? c.body.password : '';
     if (limited(`login-ip:${c.ip}`, 30, 900_000) || (email && limited(`login-email:${email}`, 8, 900_000))) throw tooMany();
-    const user = email ? (db.prepare('SELECT * FROM users WHERE email = ?').get(email) as UserRow | undefined) : undefined;
+    const user = email ? ((await db.prepare('SELECT * FROM users WHERE email = ?').get(email)) as UserRow | undefined) : undefined;
     const ok = await verifyPassword(password, user?.password_hash ?? DUMMY_HASH);
     if (!user || !ok) throw new HttpError(401, 'Incorrect email or password.');
     if (user.status !== 'active') throw new HttpError(403, 'This account is suspended.');
-    setSession(c, createSession(db, user.id));
+    setSession(c, await createSession(db, user.id));
     return { user: publicUser(user) };
   });
 
   route('POST', '/api/auth/logout', async (c) => {
-    deleteSession(db, c.cookies[SESSION_COOKIE]);
+    await deleteSession(db, c.cookies[SESSION_COOKIE]);
     clearSession(c);
     return { ok: true };
   });
 
   route('GET', '/api/auth/me', async (c) => {
-    const u = currentUser(c);
+    const u = await currentUser(c);
     return { user: u ? publicUser(u) : null };
   });
 
   route('POST', '/api/auth/verify', async (c) => {
     if (limited(`verify:${c.ip}`, 20, 900_000)) throw tooMany();
     const token = typeof c.body.token === 'string' ? c.body.token : '';
-    const userId = consumeEmailToken(db, token, 'verify_email');
+    const userId = await consumeEmailToken(db, token, 'verify_email');
     if (!userId) throw new HttpError(400, 'This link is invalid or has expired.');
-    db.prepare('UPDATE users SET email_verified_at = ? WHERE id = ? AND email_verified_at IS NULL').run(new Date().toISOString(), userId);
-    audit(db, userId, 'user.email_verified', userId);
-    maybePromoteOwner(db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as UserRow);
+    await db.prepare('UPDATE users SET email_verified_at = ? WHERE id = ? AND email_verified_at IS NULL').run(new Date().toISOString(), userId);
+    await audit(db, userId, 'user.email_verified', userId);
+    await maybePromoteOwner((await db.prepare('SELECT * FROM users WHERE id = ?').get(userId)) as UserRow);
     return { ok: true };
   });
 
   route('POST', '/api/auth/resend-verification', async (c) => {
-    const u = requireUser(c);
+    const u = await requireUser(c);
     if (limited(`resend:${u.id}`, 3, 3_600_000)) throw tooMany();
-    if (!u.email_verified_at) sendVerify(u);
+    if (!u.email_verified_at) await sendVerify(u);
     return { ok: true };
   });
 
   route('POST', '/api/auth/forgot', async (c) => {
     if (limited(`forgot:${c.ip}`, 10, 3_600_000)) throw tooMany();
     const email = validEmail(c.body.email);
-    const user = email ? (db.prepare('SELECT * FROM users WHERE email = ?').get(email) as UserRow | undefined) : undefined;
+    const user = email ? ((await db.prepare('SELECT * FROM users WHERE email = ?').get(email)) as UserRow | undefined) : undefined;
     if (user) {
-      const token = createEmailToken(db, user.id, 'reset_password');
+      const token = await createEmailToken(db, user.id, 'reset_password');
       o.sendMail({ to: user.email, subject: 'Reset your Kredilo password', text: `Open this link to set a new password:\n${o.appOrigin}/reset-password?token=${token}` });
     }
     return { ok: true }; // same answer whether or not the email exists
@@ -164,35 +164,35 @@ export function createApp(db: Db, o: AppOptions): Server {
   route('POST', '/api/auth/reset', async (c) => {
     if (limited(`reset:${c.ip}`, 10, 900_000)) throw tooMany();
     const token = typeof c.body.token === 'string' ? c.body.token : '';
-    const peeked = peekEmailToken(db, token, 'reset_password');
+    const peeked = await peekEmailToken(db, token, 'reset_password');
     if (!peeked) throw new HttpError(400, 'This link is invalid or has expired.');
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(peeked) as UserRow;
+    const user = (await db.prepare('SELECT * FROM users WHERE id = ?').get(peeked)) as UserRow;
     const problem = passwordProblem(c.body.password, user.email);
     if (problem) throw new HttpError(400, problem);
-    const userId = consumeEmailToken(db, token, 'reset_password');
+    const userId = await consumeEmailToken(db, token, 'reset_password');
     if (!userId) throw new HttpError(400, 'This link is invalid or has expired.');
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(await hashPassword(c.body.password as string), userId);
-    deleteUserSessions(db, userId);
-    audit(db, userId, 'user.password_reset', userId);
+    await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(await hashPassword(c.body.password as string), userId);
+    await deleteUserSessions(db, userId);
+    await audit(db, userId, 'user.password_reset', userId);
     return { ok: true };
   });
 
   route('POST', '/api/auth/username', async (c) => {
-    const u = requireUser(c);
+    const u = await requireUser(c);
     if (limited(`username:${u.id}`, 5, 3_600_000)) throw tooMany();
     const username = validUsername(c.body.username);
     if (!username) throw new HttpError(400, 'Username must be 3-20 characters: lowercase letters, numbers or underscores.');
-    if (usernameTaken(db, username, u.id)) throw new HttpError(409, 'That username is already taken.');
-    db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, u.id);
-    audit(db, u.id, 'user.username', u.id, { username });
-    return { user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(u.id) as UserRow) };
+    if (await usernameTaken(db, username, u.id)) throw new HttpError(409, 'That username is already taken.');
+    await db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, u.id);
+    await audit(db, u.id, 'user.username', u.id, { username });
+    return { user: publicUser((await db.prepare('SELECT * FROM users WHERE id = ?').get(u.id)) as UserRow) };
   });
 
   route('GET', '/api/referral', async (c) => {
-    const u = requireUser(c);
-    const code = ensureReferralCode(db, u.id);
-    const count = (db.prepare('SELECT COUNT(*) AS n FROM users WHERE referred_by = ?').get(u.id) as { n: number }).n;
-    const credited = (db.prepare('SELECT COUNT(*) AS n FROM users WHERE referred_by = ? AND referral_bonus_paid = 1').get(u.id) as { n: number }).n;
+    const u = await requireUser(c);
+    const code = await ensureReferralCode(db, u.id);
+    const count = ((await db.prepare('SELECT COUNT(*) AS n FROM users WHERE referred_by = ?').get(u.id)) as { n: number }).n;
+    const credited = ((await db.prepare('SELECT COUNT(*) AS n FROM users WHERE referred_by = ? AND referral_bonus_paid = 1').get(u.id)) as { n: number }).n;
     return { code, count, credited, earned: credited * REFERRAL_BONUS, bonus: REFERRAL_BONUS };
   });
 
