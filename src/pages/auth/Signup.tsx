@@ -64,7 +64,7 @@ export default function Signup() {
         <AuthField label="Username" icon={AtSign} type="text" placeholder="Pick a username" value={username} onChange={setUsername} hint="This is your public name on Kredilo — not your email." autoComplete="username" />
         <AuthField label="Password" icon={Lock} type="password" placeholder="Create a password" value={password} onChange={setPassword} hint="Password must be at least 8 characters long." autoComplete="new-password" />
         <AuthField label="Confirm Password" icon={Lock} type="password" placeholder="Confirm your password" value={confirm} onChange={setConfirm} autoComplete="new-password" />
-        <AuthField label="Referral code (optional)" icon={Gift} type="text" placeholder="Enter a friend's code" value={referral} onChange={(v) => setReferral(v.toUpperCase())} hint="Did someone invite you? Enter their code so they get rewarded." />
+        <AuthField label="Referral code (optional)" icon={Gift} type="text" placeholder="Enter a friend's code" value={referral} onChange={(v) => setReferral(v.toUpperCase())} hint="Did someone invite you? Enter their code so they get rewarded." required={false} />
         <label className="flex items-start gap-2.5 text-xs leading-relaxed text-white/60">
           <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-500" />
           <span>I confirm I am 18 or older and I agree to Kredilo's <Link to="/terms" className="font-bold text-white underline underline-offset-2">Terms of Service</Link> and <Link to="/privacy" className="font-bold text-white underline underline-offset-2">Privacy Policy</Link>.</span>

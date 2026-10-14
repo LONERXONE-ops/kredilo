@@ -11,6 +11,7 @@ export function AuthField({
   onChange,
   hint,
   autoComplete,
+  required = true,
 }: {
   label: string;
   icon: LucideIcon;
@@ -20,6 +21,7 @@ export function AuthField({
   onChange: (v: string) => void;
   hint?: string;
   autoComplete?: string;
+  required?: boolean;
 }) {
   const [show, setShow] = useState(false);
   const isPassword = type === 'password';
@@ -30,7 +32,7 @@ export function AuthField({
       <div className="relative">
         <Icon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/45" />
         <input
-          required
+          required={required}
           type={isPassword && show ? 'text' : type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
