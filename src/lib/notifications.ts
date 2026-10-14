@@ -9,6 +9,30 @@ export const listNotifications = () => apiRequest<{ notifications: Notification[
 export const getUnreadCount = () => apiRequest<{ unread: number }>('/api/notifications/unread').then((r) => r.unread);
 export const markRead = (id?: string) => apiRequest<{ unread: number }>('/api/notifications/read', id ? { id } : {});
 
+// Where a notification should take the user when tapped. null = not tappable
+// (e.g. broadcast announcements, which have no target).
+export function notificationHref(n: Notification): string | null {
+  switch (n.type) {
+    case 'task_approved':
+      // The task is usually gone once completed — send them to their earnings.
+      return '/dashboard/wallet';
+    case 'task_rejected':
+      // Still live for a resubmit in most cases.
+      return n.refId ? `/dashboard/tasks/${n.refId}` : '/dashboard/wallet';
+    case 'referral_bonus':
+      return '/dashboard/profile';
+    case 'post_submission':
+    case 'post_live':
+    case 'post_rejected':
+      return '/dashboard/post';
+    case 'withdrawal_paid':
+    case 'withdrawal_cancelled':
+      return '/dashboard/wallet';
+    default:
+      return null;
+  }
+}
+
 // Short relative time like "3h ago", "2d ago", "just now".
 export function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();

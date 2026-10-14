@@ -55,7 +55,7 @@ function ReferralCard() {
 
       <div className="mt-3 grid grid-cols-2 gap-3">
         <button onClick={() => copy('link', link)} className="pressable flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/20 text-sm font-bold hover:bg-white/5">
-          {copied === 'link' ? <><Check size={16} /> Link copied</> : <><Copy size={16} /> Copy invite link</>}
+          {copied === 'link' ? <><Check size={16} /> Copied</> : <><Copy size={16} /> Copy link</>}
         </button>
         <button onClick={share} className="pressable flex min-h-11 items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90">
           <Share2 size={16} /> Share

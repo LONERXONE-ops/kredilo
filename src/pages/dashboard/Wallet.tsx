@@ -73,7 +73,7 @@ function Overview({ w, goto }: { w: WalletData; goto: (t: Tab) => void }) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <button onClick={() => goto('withdraw')} className="pressable min-h-14 rounded-full border border-white/20 text-sm font-bold hover:bg-white/5">Withdraw</button>
-        <button onClick={() => goto('transactions')} className="pressable min-h-14 rounded-full border border-white/20 text-sm font-bold hover:bg-white/5">View Transactions</button>
+        <button onClick={() => goto('transactions')} className="pressable min-h-14 rounded-full border border-white/20 text-sm font-bold hover:bg-white/5">Transactions</button>
       </div>
     </div>
   );
