@@ -199,9 +199,9 @@ export function createApp(db: Db, o: AppOptions): Server {
 
   adminRoutes({ db, route, requireUser, options: o });
   walletRoutes({ db, route, requireUser });
-  taskRoutes({ db, route, requireUser });
-  postRoutes({ db, route, requireUser });
-  withdrawalRoutes({ db, route, requireUser });
+  taskRoutes({ db, route, requireUser, sendMail: o.sendMail });
+  postRoutes({ db, route, requireUser, sendMail: o.sendMail });
+  withdrawalRoutes({ db, route, requireUser, sendMail: o.sendMail });
   adminDataRoutes({ db, route, requireUser });
   avatarRoutes({ db, route, requireUser });
   notificationRoutes({ db, route, requireUser });

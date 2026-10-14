@@ -2,7 +2,7 @@ import { newId } from './auth.ts';
 import type { UserRow } from './auth.ts';
 import { audit } from './db.ts';
 import type { Db } from './db.ts';
-import { HttpError } from './http.ts';
+import { HttpError, limited } from './http.ts';
 import type { Ctx } from './http.ts';
 import { creditReward, LedgerError } from './ledger.ts';
 
@@ -28,6 +28,7 @@ export function gameRoutes({ db, route, requireUser }: Deps) {
 
   route('POST', '/api/games/claim', async (c) => {
     const u = await requireUser(c);
+    if (limited(`game-claim:${u.id}`, 20, 60_000)) throw new HttpError(429, 'You’re going a bit fast — wait a moment and try again.');
     const game = typeof c.body.game === 'string' ? c.body.game : '';
     if (!(game in CAPS)) throw new HttpError(400, 'Unknown game.');
     const raw = typeof c.body.score === 'number' && Number.isFinite(c.body.score) ? c.body.score : 0;

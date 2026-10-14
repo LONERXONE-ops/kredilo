@@ -2,7 +2,7 @@ import { newId } from './auth.ts';
 import type { UserRow } from './auth.ts';
 import { audit } from './db.ts';
 import type { Db } from './db.ts';
-import { HttpError } from './http.ts';
+import { HttpError, limited } from './http.ts';
 import type { Ctx } from './http.ts';
 import { creditReward, LedgerError } from './ledger.ts';
 
@@ -25,6 +25,7 @@ export function socialRoutes({ db, route, requireUser }: Deps) {
 
   route('POST', '/api/follow/claim', async (c) => {
     const u = await requireUser(c);
+    if (limited(`follow-claim:${u.id}`, 15, 60_000)) throw new HttpError(429, 'You’re going a bit fast — wait a moment and try again.');
     const platform = typeof c.body.platform === 'string' ? c.body.platform : '';
     if (!PLATFORMS.includes(platform)) throw new HttpError(400, 'Unknown platform.');
 

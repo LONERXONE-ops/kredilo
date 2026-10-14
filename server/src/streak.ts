@@ -1,7 +1,7 @@
 import type { UserRow } from './auth.ts';
 import { audit } from './db.ts';
 import type { Db } from './db.ts';
-import { HttpError } from './http.ts';
+import { HttpError, limited } from './http.ts';
 import type { Ctx } from './http.ts';
 import { creditReward, LedgerError } from './ledger.ts';
 
@@ -37,6 +37,7 @@ export function streakRoutes({ db, route, requireUser }: Deps) {
 
   route('POST', '/api/streak/claim', async (c) => {
     const u = await requireUser(c);
+    if (limited(`streak-claim:${u.id}`, 10, 60_000)) throw new HttpError(429, 'You’re going a bit fast — wait a moment and try again.');
     const today = day(0), yesterday = day(-1);
     const s = await read(u.id);
     if (s.last_streak_day === today) return { already: true, streak: s.streak };

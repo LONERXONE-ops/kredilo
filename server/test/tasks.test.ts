@@ -45,6 +45,7 @@ test('full doer flow: accept, submit, admin approves, tokens credited once', asy
   assert.equal((await t.call('POST', '/api/admin/submissions/approve', { submissionId: subId }, owner)).status, 200);
   assert.equal(await balance(t.db, did), 30);
   assert.equal(await reserveAvailable(t.db), 4800 - 30);
+  assert.ok(t.mails.some((m) => m.to === 'doer@example.com' && /approved/i.test(m.subject))); // Wave 4: approval email
   assert.equal((await t.call('POST', '/api/admin/submissions/approve', { submissionId: subId }, owner)).status, 409);
   assert.equal(await balance(t.db, did), 30);
   t.close();

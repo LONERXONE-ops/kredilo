@@ -12,7 +12,7 @@ export type Funding = {
 };
 export type LedgerEntry = { amount: number; reason: string; refType: string | null; email: string; at: string };
 export type AuditEntry = { action: string; target: string | null; meta: string | null; actor: string | null; at: string };
-export type Fraud = { reusedScreenshots: number; reusedHandles: { handle: string; accounts: number }[]; notReceivedCount: number };
+export type Fraud = { reusedScreenshots: number; reusedHandles: { handle: string; accounts: number }[]; reusedBankAccounts: { bank: string; last4: string; accounts: number }[]; notReceivedCount: number };
 
 export const getOverview = () => apiRequest<Overview>('/api/admin/overview');
 export const getUsers = (q?: string) => apiRequest<{ users: AdminUser[] }>(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ''}`).then((r) => r.users);
@@ -20,7 +20,7 @@ export const setUserStatus = (userId: string, suspend: boolean) => apiRequest('/
 export const getFunding = () => apiRequest<Funding>('/api/admin/funding');
 export const addFunding = (tokens: number) => apiRequest<{ availableTokens: number; availableNaira: number }>('/api/admin/funding', { tokens });
 export const setExchangeRate = (kreds: number, naira: number) => apiRequest<{ rate: { tokens: number; naira: number } }>('/api/admin/rate', { kreds, naira });
+export const sendAnnouncement = (title: string, body: string) => apiRequest<{ sent: number }>('/api/admin/announce', { title, body });
 export const getLedger = () => apiRequest<{ entries: LedgerEntry[] }>('/api/admin/ledger').then((r) => r.entries);
 export const getAudit = () => apiRequest<{ entries: AuditEntry[] }>('/api/admin/audit').then((r) => r.entries);
 export const getFraud = () => apiRequest<Fraud>('/api/admin/fraud');
-export const sendAnnouncement = (title: string, body: string) => apiRequest<{ sent: number }>('/api/admin/announce', { title, body });

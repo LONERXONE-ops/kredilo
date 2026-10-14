@@ -158,10 +158,16 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
     const reusedHandle = (await db
       .prepare(`SELECT LOWER(handle) AS h, COUNT(DISTINCT user_id) AS c FROM submissions WHERE handle IS NOT NULL GROUP BY LOWER(handle) HAVING c > 1`)
       .all()) as { h: string; c: number }[];
+    // One bank account paid out to several different accounts is the classic multi-account cash-out.
+    const reusedBank = (await db
+      .prepare(`SELECT bank_name AS b, account_last4 AS l4, COUNT(DISTINCT user_id) AS c
+                FROM withdrawals WHERE account_last4 IS NOT NULL GROUP BY bank_name, account_last4 HAVING c > 1`)
+      .all()) as { b: string; l4: string; c: number }[];
     const notReceived = await one(db, 'SELECT COUNT(*) AS n FROM withdrawals WHERE not_received = 1');
     return {
       reusedScreenshots: reusedProof.length,
       reusedHandles: reusedHandle.map((r) => ({ handle: r.h, accounts: r.c })),
+      reusedBankAccounts: reusedBank.map((r) => ({ bank: r.b, last4: r.l4, accounts: r.c })),
       notReceivedCount: notReceived,
     };
   });

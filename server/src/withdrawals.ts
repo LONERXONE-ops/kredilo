@@ -6,12 +6,14 @@ import { HttpError } from './http.ts';
 import type { Ctx } from './http.ts';
 import { balance, currentSettings, holdForWithdrawal, LedgerError, releaseWithdrawal, tokensToNaira } from './ledger.ts';
 import { decrypt, encrypt } from './crypto.ts';
-import { notify } from './notifications.ts';
+import { emailUser, notify } from './notifications.ts';
+import type { SendMail } from './notifications.ts';
 
 type Deps = {
   db: Db;
   route: (method: string, path: string, h: (c: Ctx) => Promise<unknown>) => void;
   requireUser: (c: Ctx) => Promise<UserRow>;
+  sendMail?: SendMail;
 };
 
 const str = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
@@ -30,7 +32,7 @@ async function flag(db: Db, key: string): Promise<string | null> {
   return r?.value ?? null;
 }
 
-export function withdrawalRoutes({ db, route, requireUser }: Deps) {
+export function withdrawalRoutes({ db, route, requireUser, sendMail }: Deps) {
   const requireAdmin = async (c: Ctx): Promise<UserRow> => {
     const u = await requireUser(c);
     if (u.role === 'user') throw new HttpError(403, 'Admins only.');
@@ -148,6 +150,8 @@ export function withdrawalRoutes({ db, route, requireUser }: Deps) {
       body: `₦${w.amount_naira.toLocaleString()} has been sent to your ${w.bank_name} account. Ref: ${ref}.`,
       refType: 'withdrawal', refId: w.id,
     });
+    await emailUser(db, sendMail, w.user_id, 'Your Kredilo withdrawal has been paid 💸',
+      `₦${w.amount_naira.toLocaleString()} has been sent to your ${w.bank_name} account.\n\nTransfer reference: ${ref}\n\nIf you don't see it, flag it from your wallet on Kredilo.`);
     return { ok: true };
   });
 
@@ -167,6 +171,8 @@ export function withdrawalRoutes({ db, route, requireUser }: Deps) {
       body: `Your withdrawal was cancelled: ${reason}${returnTokens ? ' Your tokens have been returned.' : ''}`,
       refType: 'withdrawal', refId: w.id,
     });
+    await emailUser(db, sendMail, w.user_id, 'Your Kredilo withdrawal was cancelled',
+      `Your withdrawal was cancelled.\n\nReason: ${reason}${returnTokens ? '\n\nYour kreds have been returned to your wallet.' : ''}`);
     return { ok: true };
   });
 

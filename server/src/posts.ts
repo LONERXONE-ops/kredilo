@@ -6,12 +6,14 @@ import { HttpError } from './http.ts';
 import type { Ctx } from './http.ts';
 import { saveImage } from './uploads.ts';
 import { cleanLink } from './tasks.ts';
-import { notify } from './notifications.ts';
+import { emailUser, notify } from './notifications.ts';
+import type { SendMail } from './notifications.ts';
 
 type Deps = {
   db: Db;
   route: (method: string, path: string, h: (c: Ctx) => Promise<unknown>) => void;
   requireUser: (c: Ctx) => Promise<UserRow>;
+  sendMail?: SendMail;
 };
 
 const CATEGORIES = ['Social Media', 'Surveys', 'Apps & Sign Ups', 'Content Creation', 'Gaming', 'Shopping & Offers', 'Research & Reviews', 'Other'];
@@ -66,7 +68,7 @@ type SubRow = {
   handle: string | null; submitted_at: string | null;
 };
 
-export function postRoutes({ db, route, requireUser }: Deps) {
+export function postRoutes({ db, route, requireUser, sendMail }: Deps) {
   const getTask = async (id: string) => (await db.prepare('SELECT * FROM tasks WHERE id = ?').get(id)) as TaskRow | undefined;
   const requireAdmin = async (c: Ctx): Promise<UserRow> => {
     const u = await requireUser(c);
@@ -197,6 +199,8 @@ export function postRoutes({ db, route, requireUser }: Deps) {
       type: 'post_live', title: 'Your task is live ✅',
       body: `"${task.title}" is now live for doers.`, refType: 'task', refId: task.id,
     });
+    await emailUser(db, sendMail, task.created_by, 'Your Kredilo task is live ✅',
+      `Your payment was confirmed and "${task.title}" is now live for doers.\n\nTrack completions from "My posted tasks" on Kredilo.`);
     return { ok: true };
   });
 
@@ -213,6 +217,8 @@ export function postRoutes({ db, route, requireUser }: Deps) {
       type: 'post_rejected', title: 'Posted task declined',
       body: `"${task.title}" was not approved: ${note}`, refType: 'task', refId: task.id,
     });
+    await emailUser(db, sendMail, task.created_by, 'Your Kredilo posted task was declined',
+      `"${task.title}" was not approved.\n\nReason: ${note}\n\nReach out to support if you think this was a mistake.`);
     return { ok: true };
   });
 }

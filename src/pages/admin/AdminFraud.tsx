@@ -38,6 +38,19 @@ export default function AdminFraud() {
               {f.reusedHandles.length === 0 && <p className="py-2 text-sm text-white/45">None found.</p>}
             </div>
           </div>
+          <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-5">
+            <div className="flex items-center gap-2"><ShieldAlert size={18} /><h2 className="font-extrabold">Bank accounts paid across more than one account</h2></div>
+            <p className="mt-1 text-xs text-white/40">One payout account shared by several users is a strong multi-account signal.</p>
+            <div className="mt-3 divide-y divide-white/5">
+              {f.reusedBankAccounts.map((b) => (
+                <div key={`${b.bank}-${b.last4}`} className="flex items-center justify-between py-2 text-sm">
+                  <span className="font-semibold">{b.bank} ••••{b.last4}</span>
+                  <span className="text-white/50">{b.accounts} accounts</span>
+                </div>
+              ))}
+              {f.reusedBankAccounts.length === 0 && <p className="py-2 text-sm text-white/45">None found.</p>}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -2,18 +2,22 @@ import { audit } from './db.ts';
 import type { Db } from './db.ts';
 import { newId } from './auth.ts';
 import type { UserRow } from './auth.ts';
-import { HttpError } from './http.ts';
+import { HttpError, limited } from './http.ts';
 import type { Ctx } from './http.ts';
 import { creditReward, LedgerError } from './ledger.ts';
 import { readPrivateImage, saveImage } from './uploads.ts';
-import { notify } from './notifications.ts';
+import { emailUser, notify } from './notifications.ts';
+import type { SendMail } from './notifications.ts';
 import { REFERRAL_BONUS } from './auth.ts';
 
 type Deps = {
   db: Db;
   route: (method: string, path: string, h: (c: Ctx) => Promise<unknown>) => void;
   requireUser: (c: Ctx) => Promise<UserRow>;
+  sendMail?: SendMail;
 };
+
+const tooMany = () => new HttpError(429, 'You’re going a bit fast — wait a moment and try again.');
 
 const PROOF_TYPES = ['screenshot', 'link', 'text', 'none'];
 const CATEGORIES = ['Social Media', 'Surveys', 'Apps & Sign Ups', 'Content Creation', 'Gaming', 'Shopping & Offers', 'Research & Reviews', 'Other'];
@@ -53,7 +57,7 @@ const publicTask = (t: TaskRow) => ({
   maxCompletions: t.max_completions, approvedCount: t.approved_count, expiresAt: t.expires_at,
 });
 
-export function taskRoutes({ db, route, requireUser }: Deps) {
+export function taskRoutes({ db, route, requireUser, sendMail }: Deps) {
   const requireAdmin = async (c: Ctx): Promise<UserRow> => {
     const u = await requireUser(c);
     if (u.role === 'user') throw new HttpError(403, 'Admins only.');
@@ -83,6 +87,7 @@ export function taskRoutes({ db, route, requireUser }: Deps) {
 
   route('POST', '/api/tasks/accept', async (c) => {
     const u = await requireUser(c);
+    if (limited(`accept:${u.id}`, 30, 60_000)) throw tooMany();
     const task = await getTask(str(c.body.taskId, 64));
     if (!task || !isLive(task)) throw new HttpError(404, 'This task is not available.');
     if (task.approved_count >= task.max_completions) throw new HttpError(409, 'This task is full.');
@@ -98,6 +103,7 @@ export function taskRoutes({ db, route, requireUser }: Deps) {
 
   route('POST', '/api/tasks/submit', async (c) => {
     const u = await requireUser(c);
+    if (limited(`submit:${u.id}`, 15, 60_000)) throw tooMany();
     const sub = (await db.prepare('SELECT * FROM submissions WHERE task_id = ? AND user_id = ?').get(str(c.body.taskId, 64), u.id)) as SubRow | undefined;
     if (!sub) throw new HttpError(404, 'Start the task before submitting.');
     if (sub.status !== 'in_progress') throw new HttpError(409, 'This task has already been submitted.');
@@ -240,6 +246,8 @@ export function taskRoutes({ db, route, requireUser }: Deps) {
       type: 'task_approved', title: 'Task approved 🎉',
       body: `You earned ${task.reward_tokens} kreds for "${task.title}".`, refType: 'task', refId: task.id,
     });
+    await emailUser(db, sendMail, sub.user_id, 'Your Kredilo task was approved 🎉',
+      `Good news — "${task.title}" was approved and ${task.reward_tokens} kreds have been added to your wallet.\n\nLog in to Kredilo to see your balance.`);
 
     // Referral bonus: the first approved task for a referred user pays their referrer once.
     const doer = (await db.prepare('SELECT referred_by, referral_bonus_paid FROM users WHERE id = ?').get(sub.user_id)) as { referred_by: string | null; referral_bonus_paid: number } | undefined;
@@ -277,6 +285,8 @@ export function taskRoutes({ db, route, requireUser }: Deps) {
       type: 'task_rejected', title: 'Task not approved',
       body: `"${rtask?.title ?? 'Your task'}" was not approved: ${reason}`, refType: 'task', refId: sub.task_id,
     });
+    await emailUser(db, sendMail, sub.user_id, 'Your Kredilo task was not approved',
+      `"${rtask?.title ?? 'Your task'}" was not approved.\n\nReason: ${reason}\n\nYou can try another task on Kredilo.`);
     return { ok: true };
   });
 

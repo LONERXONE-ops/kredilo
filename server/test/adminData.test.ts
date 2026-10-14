@@ -99,6 +99,7 @@ test('fraud endpoint returns the expected shape', async () => {
   const f = (await t.call('GET', '/api/admin/fraud', undefined, owner)).json;
   assert.equal(typeof f.reusedScreenshots, 'number');
   assert.ok(Array.isArray(f.reusedHandles));
+  assert.ok(Array.isArray(f.reusedBankAccounts));
   assert.equal(typeof f.notReceivedCount, 'number');
   t.close();
 });

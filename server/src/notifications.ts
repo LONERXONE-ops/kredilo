@@ -30,6 +30,22 @@ export async function notify(
   }
 }
 
+export type SendMail = (m: { to: string; subject: string; text: string }) => void;
+
+// Email a user by id for the events worth an inbox ping (approvals, payouts, etc.). Never throws
+// and is fire-and-forget: a mail failure must not break the action that triggered it. Silently does
+// nothing when no mailer is configured. Real delivery to arbitrary users needs a verified Resend
+// domain; until then the mailer just logs.
+export async function emailUser(db: Queryable, sendMail: SendMail | undefined, userId: string, subject: string, text: string): Promise<void> {
+  if (!sendMail) return;
+  try {
+    const row = (await db.prepare('SELECT email FROM users WHERE id = ?').get(userId)) as { email: string } | undefined;
+    if (row?.email) sendMail({ to: row.email, subject, text });
+  } catch (e) {
+    console.error('[emailUser]', e);
+  }
+}
+
 const view = (n: NRow) => ({
   id: n.id, type: n.type, title: n.title, body: n.body,
   refType: n.ref_type, refId: n.ref_id, read: !!n.read_at, createdAt: n.created_at,
