@@ -4,6 +4,7 @@ import { SectionHeader } from '../../components/SectionHeader';
 import { approveSubmission, listPendingSubmissions, rejectSubmission } from '../../lib/admin';
 import type { PendingSubmission } from '../../lib/admin';
 import { Kred } from '../../components/Kred';
+import { ViewableImage } from '../../components/ViewableImage';
 
 export default function AdminSubmissions() {
   const [subs, setSubs] = useState<PendingSubmission[] | null>(null);
@@ -50,9 +51,9 @@ export default function AdminSubmissions() {
               </div>
             </div>
             {s.proofFile && (
-              <a href={`/api/uploads?file=${s.proofFile}`} target="_blank" rel="noreferrer">
-                <img src={`/api/uploads?file=${s.proofFile}`} alt="proof" className="mt-3 max-h-64 rounded-2xl border border-white/10 object-contain" />
-              </a>
+              <div className="mt-3">
+                <ViewableImage src={`/api/uploads?file=${s.proofFile}`} alt="proof" className="max-h-64 rounded-2xl border border-white/10 object-contain" />
+              </div>
             )}
             {rejecting === s.id ? (
               <div className="mt-4 space-y-2">

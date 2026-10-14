@@ -8,6 +8,7 @@ import { fileToDataUrl } from '../../lib/tasks';
 import { Tabs } from '../../components/Tabs';
 import { Kred } from '../../components/Kred';
 import { Field, FormSection, SelectInput, Toggle, inputCls } from '../../components/Field';
+import { ViewableImage } from '../../components/ViewableImage';
 
 type Tab = 'new' | 'mine';
 
@@ -142,7 +143,7 @@ function DoerList({ taskId }: { taskId: string }) {
   if (!data) return <p className="py-2 text-sm text-white/45">Loading doers...</p>;
   const row = (d: Doer) => (
     <div key={d.id} className="flex items-center gap-3 border-t border-white/5 py-2 first:border-t-0">
-      {d.proofFile ? <a href={`/api/uploads?file=${encodeURIComponent(d.proofFile)}`} target="_blank" rel="noreferrer"><img src={`/api/uploads?file=${encodeURIComponent(d.proofFile)}`} alt="proof" className="h-12 w-12 rounded-lg object-cover" /></a> : <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/10 text-xs text-white/40">—</div>}
+      {d.proofFile ? <ViewableImage src={`/api/uploads?file=${encodeURIComponent(d.proofFile)}`} alt="proof" className="h-12 w-12 rounded-lg object-cover" /> : <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/10 text-xs text-white/40">—</div>}
       <div className="text-sm"><div className="font-semibold">{d.handle ?? 'No handle'}</div><div className="text-xs text-white/45">{d.status === 'approved' ? 'Approved' : d.status === 'pending_review' ? 'Submitted' : 'In progress'}</div></div>
     </div>
   );

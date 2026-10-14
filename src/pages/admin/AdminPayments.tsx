@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { SectionHeader } from '../../components/SectionHeader';
+import { ViewableImage } from '../../components/ViewableImage';
 import { confirmPost, listAdminPosts, rejectPost } from '../../lib/posts';
 import type { AdminPost } from '../../lib/posts';
 
@@ -43,8 +44,8 @@ export default function AdminPayments() {
               </div>
             </div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {p.photo && <div><div className="mb-1 text-xs text-white/45">Task photo</div><a href={`/api/uploads?file=${p.photo}`} target="_blank" rel="noreferrer"><img src={`/api/uploads?file=${p.photo}`} alt="task" className="max-h-48 rounded-2xl border border-white/10 object-contain" /></a></div>}
-              {p.receipt && <div><div className="mb-1 text-xs text-white/45">Payment receipt</div><a href={`/api/uploads?file=${p.receipt}`} target="_blank" rel="noreferrer"><img src={`/api/uploads?file=${p.receipt}`} alt="receipt" className="max-h-48 rounded-2xl border border-white/10 object-contain" /></a></div>}
+              {p.photo && <div><div className="mb-1 text-xs text-white/45">Task photo</div><ViewableImage src={`/api/uploads?file=${p.photo}`} alt="task" className="max-h-48 rounded-2xl border border-white/10 object-contain" /></div>}
+              {p.receipt && <div><div className="mb-1 text-xs text-white/45">Payment receipt</div><ViewableImage src={`/api/uploads?file=${p.receipt}`} alt="receipt" className="max-h-48 rounded-2xl border border-white/10 object-contain" /></div>}
             </div>
             {acting === p.id ? (
               <div className="mt-4 space-y-2">
@@ -55,9 +56,9 @@ export default function AdminPayments() {
                 </div>
               </div>
             ) : (
-              <div className="mt-4 flex gap-2">
-                <button disabled={busy === p.id} onClick={() => act(p.id, () => confirmPost(p.id, 'Payment confirmed'))} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-emerald-500/20 text-sm font-bold text-emerald-300 disabled:opacity-50"><Check size={16} /> Confirm payment & go live</button>
-                <button onClick={() => setActing(p.id)} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-white/20 text-sm font-bold"><X size={16} /> Reject</button>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <button disabled={busy === p.id} onClick={() => act(p.id, () => confirmPost(p.id, 'Payment confirmed'))} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-emerald-500/20 px-4 text-sm font-bold text-emerald-300 disabled:opacity-50"><Check size={16} className="shrink-0" /> Confirm payment &amp; go live</button>
+                <button onClick={() => setActing(p.id)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/20 px-6 text-sm font-bold sm:flex-1"><X size={16} className="shrink-0" /> Reject</button>
               </div>
             )}
           </div>

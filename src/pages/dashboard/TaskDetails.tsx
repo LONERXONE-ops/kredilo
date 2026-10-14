@@ -4,6 +4,7 @@ import { ExternalLink, ImageUp, Loader2 } from 'lucide-react';
 import { acceptTask, fileToDataUrl, listMySubmissions, listTasks, statusLabel, submitTask } from '../../lib/tasks';
 import type { MySubmission, Task } from '../../lib/tasks';
 import { Kred } from '../../components/Kred';
+import { ViewableImage } from '../../components/ViewableImage';
 
 export default function TaskDetails() {
   const { id = '' } = useParams();
@@ -111,7 +112,9 @@ export default function TaskDetails() {
         <p className="mt-4 whitespace-pre-wrap leading-relaxed text-white/70">{task.description}</p>
 
         {task.photo && (
-          <img src={`/api/uploads?file=${encodeURIComponent(task.photo)}`} alt="" className="mt-4 max-h-64 rounded-2xl border border-white/10 object-contain" />
+          <div className="mt-4">
+            <ViewableImage src={`/api/uploads?file=${encodeURIComponent(task.photo)}`} alt="Task image" className="max-h-64 rounded-2xl border border-white/10 object-contain" />
+          </div>
         )}
 
         {task.link && (
