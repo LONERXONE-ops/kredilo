@@ -56,9 +56,12 @@ fresh Turso DB), so there's nothing to import.
 1. render.com → **New → Web Service** → connect the `LONERXONE-ops/kredilo` repo.
 2. Settings:
    - **Root Directory:** `server`
-   - **Build Command:** `npm install`
+   - **Build Command:** `npm install && npm --prefix .. install && npm --prefix .. run build`
    - **Start Command:** `npm start`
    - **Instance type:** Free
+
+   (The build installs the API deps, then builds the frontend into `../dist`;
+   the server serves that build itself — see Step 3.)
 3. **Environment variables** (Render dashboard → Environment):
 
    | Key | Value |
@@ -87,23 +90,21 @@ fresh Turso DB), so there's nothing to import.
 
 ---
 
-## Step 3 — the frontend (one more small change I'll make)
+## Step 3 — the frontend (already wired)
 
-The site calls the API with relative `/api/...` paths, so the cleanest setup is to
-serve the built frontend **from the same Render service** — one origin, no CORS, and
-the login cookie just works. That needs a small addition to the Node server (serve
-`dist/` + SPA fallback) and a tweak to the build command to build the frontend too.
+The Node server now serves the built frontend itself: the build command above
+produces `../dist`, and the server serves it with SPA fallback for any non-`/api`
+route (`src/static.ts`). So **one** Render service hosts the whole site — the app and
+`/api` share an origin, no CORS, and the session cookie just works. The frontend calls
+the API with relative `/api/...` paths, so nothing else needs configuring.
 
-**I'll add that once the rewrite tests are green** — I didn't want to bundle untested
-serving code on top of the DB rewrite. After it's in, the Render build command becomes
-roughly:
-
-```
-npm install && npm --prefix .. install && npm --prefix .. run build
-```
-
-and the server serves the built site. Then point `kredilo.com.ng` (Whogohost DNS →
-a CNAME/A record Render gives you) at the Render service.
+Then point the domain at Render:
+1. Render service → **Settings → Custom Domains** → add `kredilo.com.ng` (and
+   `www.kredilo.com.ng` if you want it).
+2. In **Whogohost DNS**, add the record Render shows you — usually an `ALIAS`/`CNAME`
+   for the apex to `<service>.onrender.com` (or the A record Render gives). Wait for it
+   to verify (minutes to a couple hours).
+3. `APP_ORIGIN` and `ALLOWED_ORIGINS` are already `https://kredilo.com.ng` from Step 2.
 
 ---
 

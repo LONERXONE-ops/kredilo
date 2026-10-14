@@ -22,6 +22,7 @@ import type { UserRow } from './auth.ts';
 import { HttpError, cookie, limited, parseCookies, readJson, sendJson } from './http.ts';
 import type { Ctx } from './http.ts';
 import type { AppOptions } from './config.ts';
+import { serveStatic } from './static.ts';
 
 type Handler = (c: Ctx) => Promise<unknown>;
 
@@ -213,7 +214,11 @@ export function createApp(db: Db, o: AppOptions): Server {
       const url = new URL(req.url ?? '/', 'http://localhost');
       const method = req.method ?? 'GET';
       const h = routes.get(`${method} ${url.pathname}`);
-      if (!h) throw new HttpError(404, 'Not found');
+      if (!h) {
+        // Not an API route: serve the built frontend (production) with SPA fallback.
+        if (method === 'GET' && !url.pathname.startsWith('/api/') && serveStatic(url.pathname, res)) return;
+        throw new HttpError(404, 'Not found');
+      }
       if (method !== 'GET') {
         const origin = req.headers.origin;
         if (origin && !o.allowedOrigins.includes(origin)) throw new HttpError(403, 'Origin not allowed');
