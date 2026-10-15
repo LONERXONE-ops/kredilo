@@ -6,7 +6,7 @@ export const SOCIALS: Social[] = [
   { key: 'x', label: 'X', url: 'https://x.com/krediloofficial' },
   { key: 'instagram', label: 'Instagram', url: 'https://www.instagram.com/kredilo' },
   { key: 'tiktok', label: 'TikTok', url: 'https://www.tiktok.com/@kredilo.ng' },
-  { key: 'facebook', label: 'Facebook', url: 'https://www.facebook.com/share/1FGyEY9N8H/' },
+  { key: 'facebook', label: 'Facebook', url: 'https://www.facebook.com/share/19dcSW3C1g/' },
 ];
 
 export const socialUrl = (key: string) => SOCIALS.find((s) => s.key === key)?.url ?? '';
