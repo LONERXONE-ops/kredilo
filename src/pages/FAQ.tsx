@@ -7,7 +7,7 @@ const faqs = [
   { icon: ShieldCheck, q: 'How long does task verification take?', a: 'It depends on the task. Some, like built-in games, can be checked automatically. Others need manual review. You can follow the status of each task under My Tasks on your dashboard.' },
   { icon: CircleX, q: 'What happens if my submission is rejected?', a: 'You will see the reason for the rejection. No kreds are credited for a rejected submission.' },
   { icon: Wallet, q: 'When can I request a withdrawal?', a: 'Withdrawals open on a date set by Kredilo. The minimum is 2,000 kreds (₦1,000), at 100 kreds = ₦50. This rate is provisional. We will announce clearly when withdrawals open.' },
-  { icon: CreditCard, q: 'What payout methods are supported?', a: 'None yet. Kredilo does not currently send real money. Payout methods will be announced once secure payments are ready.' },
+  { icon: CreditCard, q: 'What payout methods are supported?', a: 'Bank transfer. You withdraw your kreds as Naira straight to your Nigerian bank account. Withdrawals open on a date announced in the app, with a minimum of 2,000 kreds (₦1,000).' },
   { icon: Lock, q: 'How do I keep my account secure?', a: 'Use a strong, unique password and never share your login details. Kredilo will never ask for your password.' },
   { icon: Headphones, q: 'How can I get support?', a: 'Use the Contact page, or open Help & Support from your Profile once you are logged in.' },
 ];

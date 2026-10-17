@@ -9,8 +9,6 @@ import { AuthProvider } from './lib/auth';
 import VerifyEmail from './pages/auth/VerifyEmail';
 import ResetPassword from './pages/auth/ResetPassword';
 import HowItWorks from './pages/HowItWorks';
-import ExploreCategories from './pages/ExploreCategories';
-import FeaturedTasks from './pages/FeaturedTasks';
 import Games from './pages/Games';
 import FAQ from './pages/FAQ';
 import Login from './pages/auth/Login';
@@ -58,8 +56,8 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/explore" element={<ExploreCategories />} />
-          <Route path="/tasks" element={<FeaturedTasks />} />
+          <Route path="/explore" element={<Navigate to="/signup" replace />} />
+          <Route path="/tasks" element={<Navigate to="/signup" replace />} />
           <Route path="/games" element={<Games />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/about" element={<About />} />
