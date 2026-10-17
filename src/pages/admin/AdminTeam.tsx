@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Copy, Trash2, UserPlus } from 'lucide-react';
 import { SectionHeader } from '../../components/SectionHeader';
+import { SelectInput } from '../../components/Field';
 import { apiRequest } from '../../lib/auth';
 
 type Member = { id: string; email: string; role: string; createdAt: string };
@@ -84,15 +85,15 @@ export default function AdminTeam() {
             placeholder="Their email address"
             className="h-12 w-full rounded-full border border-white/20 bg-black/40 px-5 text-sm outline-none placeholder:text-white/35 focus:border-white/50"
           />
-          <select
+          <SelectInput
             value={role}
-            onChange={(e) => setRole(e.target.value as InviteRole)}
-            aria-label="Role"
-            className="h-12 w-full rounded-full border border-white/20 bg-black/40 px-5 text-sm outline-none"
+            onChange={(v) => setRole(v as InviteRole)}
+            ariaLabel="Role"
+            triggerClassName="h-12 w-full rounded-full border border-white/20 bg-black/40 px-5 text-sm outline-none flex items-center justify-between gap-2 text-left"
           >
             <option value="reviewer">Reviewer</option>
             <option value="support">Support</option>
-          </select>
+          </SelectInput>
           <p className="text-xs text-white/45">{roleText[role]}</p>
           <button disabled={busy} className="min-h-12 w-full rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-60">
             {busy ? 'Creating...' : 'Create invitation link'}
@@ -122,15 +123,16 @@ export default function AdminTeam() {
               </div>
               {m.role !== 'owner' && (
                 <div className="flex items-center gap-2">
-                  <select
+                  <SelectInput
                     value={m.role}
-                    aria-label={`Role for ${m.email}`}
-                    onChange={(e) => act(() => apiRequest('/api/admin/team/role', { userId: m.id, role: e.target.value }))}
-                    className="h-10 rounded-full border border-white/20 bg-black/40 px-3 text-sm outline-none"
+                    ariaLabel={`Role for ${m.email}`}
+                    onChange={(v) => act(() => apiRequest('/api/admin/team/role', { userId: m.id, role: v }))}
+                    align="right"
+                    triggerClassName="h-10 rounded-full border border-white/20 bg-black/40 px-4 text-sm outline-none flex items-center justify-between gap-2"
                   >
                     <option value="reviewer">Reviewer</option>
                     <option value="support">Support</option>
-                  </select>
+                  </SelectInput>
                   <button
                     aria-label={`Remove ${m.email}`}
                     onClick={() => window.confirm(`Remove admin access for ${m.email}?`) && act(() => apiRequest('/api/admin/team/remove', { userId: m.id }))}

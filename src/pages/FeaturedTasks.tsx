@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Clock, Coins, Search } from 'lucide-react';
 import { mockTasks } from '../lib/mockData';
 import { categoryIcon } from '../components/TaskCard';
+import { SelectInput } from '../components/Field';
 
 export default function FeaturedTasks() {
   const [params] = useSearchParams();
@@ -36,14 +37,15 @@ export default function FeaturedTasks() {
                 className="h-14 w-full rounded-full border border-white/20 bg-black/40 pl-12 pr-4 text-sm outline-none transition placeholder:text-white/35 focus:border-emerald-400/50"
               />
             </div>
-            <select
+            <SelectInput
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              aria-label="Category"
-              className="h-11 rounded-full border border-white/20 bg-black/40 px-4 text-sm font-semibold outline-none"
+              onChange={setCategory}
+              ariaLabel="Category"
+              align="right"
+              triggerClassName="h-11 rounded-full border border-white/20 bg-black/40 px-4 text-sm font-semibold outline-none flex items-center justify-between gap-2"
             >
               {categories.map((c) => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
-            </select>
+            </SelectInput>
           </div>
         </div>
 
