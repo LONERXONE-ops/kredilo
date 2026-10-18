@@ -10,6 +10,7 @@ import { anySocialConfigured } from '../lib/socials';
 import { getFollowStatus } from '../lib/follow';
 import { FollowGate } from './FollowGate';
 import { OnboardingWalkthrough } from './OnboardingWalkthrough';
+import { VerifyEmailBanner } from './VerifyEmailBanner';
 
 // The four sections that live in the bottom dock. Any other screen shows a back button instead.
 const DOCK_ROUTES = ['/dashboard', '/dashboard/wallet', '/dashboard/games', '/dashboard/profile'];
@@ -93,6 +94,7 @@ export function DashboardLayout() {
         </main>
       ) : (
         <>
+          <VerifyEmailBanner />
           <main className={`relative mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8 ${isDock ? 'pb-36' : 'pb-16'} animate-[fadeup_320ms_ease-out]`}>
             <Outlet />
           </main>
