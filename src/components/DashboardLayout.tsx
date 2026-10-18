@@ -9,6 +9,7 @@ import { getUnreadCount } from '../lib/notifications';
 import { anySocialConfigured } from '../lib/socials';
 import { getFollowStatus } from '../lib/follow';
 import { FollowGate } from './FollowGate';
+import { OnboardingWalkthrough } from './OnboardingWalkthrough';
 
 // The four sections that live in the bottom dock. Any other screen shows a back button instead.
 const DOCK_ROUTES = ['/dashboard', '/dashboard/wallet', '/dashboard/games', '/dashboard/profile'];
@@ -96,6 +97,7 @@ export function DashboardLayout() {
             <Outlet />
           </main>
           {isDock && <BottomDock />}
+          {user.role === 'user' && <OnboardingWalkthrough />}
         </>
       )}
     </div>
