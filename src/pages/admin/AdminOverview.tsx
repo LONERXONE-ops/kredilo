@@ -12,6 +12,7 @@ export default function AdminOverview() {
 
   const cards = o ? [
     { label: 'Users', value: o.users.toLocaleString(), to: '/admin/users' },
+    { label: 'Active now', value: o.usersActive.toLocaleString(), to: '/admin/users' },
     { label: 'Admins', value: o.admins.toLocaleString(), to: '/admin/team' },
     { label: 'Live tasks', value: o.liveTasks.toLocaleString(), to: '/admin/tasks' },
     { label: 'Pending reviews', value: o.pendingReviews.toLocaleString(), to: '/admin/submissions' },
@@ -48,6 +49,15 @@ export default function AdminOverview() {
             <div className="text-sm font-semibold text-white/50">Reward reserve remaining</div>
             <div className="mt-1 text-4xl font-extrabold">{o.reserveTokens.toLocaleString()} kreds</div>
             <div className="mt-1 text-sm text-white/45">≈ ₦{o.reserveNaira.toLocaleString()} left to fund rewards</div>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-6">
+            <div className="text-sm font-semibold text-white/50">User activity</div>
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold">
+              <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-400" /> {o.usersActive.toLocaleString()} active now</span>
+              <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" /> {o.usersRecent.toLocaleString()} recently active</span>
+              <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-red-500" /> {Math.max(0, o.users - o.usersActive - o.usersRecent).toLocaleString()} inactive</span>
+            </div>
+            <div className="mt-2 text-xs text-white/40">Active = seen in the last 5 minutes. Recently active = within the hour.</div>
           </div>
         </>
       )}

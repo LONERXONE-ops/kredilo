@@ -34,7 +34,20 @@ export function createApp(db: Db, o: AppOptions): Server {
   const setSession = (c: Ctx, token: string) =>
     c.res.setHeader('Set-Cookie', cookie(SESSION_COOKIE, token, { maxAgeSec: maxAge, secure: o.isProd }));
   const clearSession = (c: Ctx) => c.res.setHeader('Set-Cookie', cookie(SESSION_COOKIE, '', { maxAgeSec: 0, secure: o.isProd }));
-  const currentUser = (c: Ctx): Promise<UserRow | null> => sessionUser(db, c.cookies[SESSION_COOKIE]);
+  // Activity heartbeat: remember when each signed-in user was last seen, at most one write per
+  // user per minute so it never adds real database load. Powers the admin activity indicators.
+  const lastSeenWrite = new Map<string, number>();
+  const touchLastSeen = async (u: UserRow) => {
+    const nowMs = Date.now();
+    if (nowMs - (lastSeenWrite.get(u.id) ?? 0) < 60_000) return;
+    lastSeenWrite.set(u.id, nowMs);
+    try { await db.prepare('UPDATE users SET last_seen_at = ? WHERE id = ?').run(new Date().toISOString(), u.id); } catch { /* best effort */ }
+  };
+  const currentUser = async (c: Ctx): Promise<UserRow | null> => {
+    const u = await sessionUser(db, c.cookies[SESSION_COOKIE]);
+    if (u) void touchLastSeen(u);
+    return u;
+  };
   const requireUser = async (c: Ctx): Promise<UserRow> => {
     const u = await currentUser(c);
     if (!u) throw new HttpError(401, 'Please log in.');

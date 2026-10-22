@@ -13,7 +13,7 @@ type Deps = {
 };
 
 // Max kreds per game, per day. Each game is claimable once per calendar day.
-const CAPS: Record<string, number> = { snake: 50, memory: 50, reaction: 30, trivia: 40 };
+const CAPS: Record<string, number> = { snake: 50, memory: 50, reaction: 30, trivia: 40, stroop: 40, math: 40, tiles: 30 };
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function gameRoutes({ db, route, requireUser }: Deps) {

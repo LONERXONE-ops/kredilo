@@ -103,3 +103,36 @@ test('fraud endpoint returns the expected shape', async () => {
   assert.equal(typeof f.notReceivedCount, 'number');
   t.close();
 });
+
+test('owner sends an announcement, sees it in history, and editing it updates what users see', async () => {
+  const t = await setup();
+  const owner = await t.makeUser(OWNER);
+  const reader = await t.makeUser('reader@example.com');
+  const sent = await t.call('POST', '/api/admin/announce', { title: 'Withdrawals open', body: 'They open Friday' }, owner);
+  assert.equal(sent.status, 200);
+  assert.ok(sent.json.sent >= 1);
+  const notifs = await t.call('GET', '/api/notifications', undefined, reader);
+  assert.equal(notifs.json.notifications[0].title, 'Withdrawals open');
+  const hist = await t.call('GET', '/api/admin/announcements', undefined, owner);
+  assert.equal(hist.status, 200);
+  assert.equal(hist.json.announcements[0].title, 'Withdrawals open');
+  const annId = hist.json.announcements[0].id;
+  assert.equal((await t.call('POST', '/api/admin/announcements/update', { id: annId, title: 'Withdrawals open now', body: 'They open today' }, owner)).status, 200);
+  const after = await t.call('GET', '/api/notifications', undefined, reader);
+  assert.equal(after.json.notifications[0].title, 'Withdrawals open now');
+  assert.equal((await t.call('GET', '/api/admin/announcements', undefined, reader)).status, 403);
+  t.close();
+});
+
+test('admin overview reports activity counts', async () => {
+  const t = await setup();
+  const owner = await t.makeUser(OWNER);
+  const u = await t.makeUser('active@example.com');
+  // make a request as u so a last_seen row is written
+  await t.call('GET', '/api/auth/me', undefined, u);
+  const o = await t.call('GET', '/api/admin/overview', undefined, owner);
+  assert.equal(o.status, 200);
+  assert.ok(typeof o.json.usersActive === 'number');
+  assert.ok(typeof o.json.usersRecent === 'number');
+  t.close();
+});

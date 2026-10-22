@@ -61,7 +61,7 @@ type TaskRow = {
   id: string; kind: string; title: string; description: string; category: string; reward_tokens: number;
   proof_type: string; needs_handle: number; photo_file: string | null; link_url: string | null; max_completions: number;
   approved_count: number; status: string; created_by: string; pool_tokens: number; price_naira: number | null;
-  days: number | null; expires_at: string | null; receipt_file: string | null; payment_note: string | null; created_at: string;
+  days: number | null; expires_at: string | null; went_live_at: string | null; receipt_file: string | null; payment_note: string | null; created_at: string;
 };
 type SubRow = {
   id: string; task_id: string; user_id: string; status: string; proof_file: string | null; proof_text: string | null;
@@ -81,6 +81,8 @@ export function postRoutes({ db, route, requireUser, sendMail }: Deps) {
     needsHandle: !!t.needs_handle, photo: t.photo_file, link: t.link_url, days: t.days, priceNaira: t.price_naira,
     maxCompletions: t.max_completions, approvedCount: t.approved_count, status: t.status,
     paymentNote: t.payment_note, expiresAt: t.expires_at,
+    // True only while the poster's one-hour post-approval edit window is still open.
+    canEdit: t.status === 'live' && !!t.went_live_at && Date.now() - Date.parse(t.went_live_at) <= 3_600_000,
   });
 
   route('GET', '/api/post/pricing', async (c) => {
@@ -147,6 +149,24 @@ export function postRoutes({ db, route, requireUser, sendMail }: Deps) {
     return { id, status: 'pending_payment', priceNaira, reward: rewardTokens, pool };
   });
 
+  // The poster can fix a mistake on their own task for up to one hour after it goes live.
+  // Ownership and the one-hour window are both enforced here on the server, never only in the UI.
+  route('POST', '/api/post/edit', async (c) => {
+    const u = await requireUser(c);
+    const task = await getTask(str(c.body.taskId, 64));
+    if (!task || task.kind !== 'posted' || task.created_by !== u.id) throw new HttpError(404, 'Task not found.');
+    if (task.status !== 'live') throw new HttpError(409, 'Only a live task can be edited.');
+    if (!task.went_live_at || Date.now() - Date.parse(task.went_live_at) > 3_600_000) throw new HttpError(403, 'The one hour edit window for this task has closed.');
+    const title = str(c.body.title, 120);
+    const description = str(c.body.description, 2000);
+    if (!title || !description) throw new HttpError(400, 'Title and description are required.');
+    const link = cleanLink(c.body.link);
+    const photo = c.body.photo ? (await saveImage(c.body.photo)).file : task.photo_file;
+    await db.prepare('UPDATE tasks SET title = ?, description = ?, link_url = ?, photo_file = ? WHERE id = ?').run(title, description, link, photo, task.id);
+    await audit(db, u.id, 'post.edit', task.id);
+    return { ok: true };
+  });
+
   route('GET', '/api/post/mine', async (c) => {
     const u = await requireUser(c);
     const tasks = (await db.prepare("SELECT * FROM tasks WHERE kind = 'posted' AND created_by = ? ORDER BY created_at DESC").all(u.id)) as TaskRow[];
@@ -188,7 +208,7 @@ export function postRoutes({ db, route, requireUser, sendMail }: Deps) {
     try {
       const already = await tx.prepare("SELECT 1 FROM reserve WHERE reason = 'post_payment' AND ref_id = ?").get(task.id);
       if (!already) await tx.prepare("INSERT INTO reserve (amount, reason, ref_type, ref_id) VALUES (?, 'post_payment', 'posted_task', ?)").run(task.pool_tokens, task.id);
-      await tx.prepare("UPDATE tasks SET status = 'live', payment_note = ?, expires_at = ? WHERE id = ? AND status = 'pending_payment'").run(note || null, expiresAt, task.id);
+      await tx.prepare("UPDATE tasks SET status = 'live', payment_note = ?, expires_at = ?, went_live_at = ? WHERE id = ? AND status = 'pending_payment'").run(note || null, expiresAt, new Date().toISOString(), task.id);
       await audit(tx, admin.id, 'post.confirm', task.id, { pool: task.pool_tokens });
       await tx.commit();
     } catch (e) {
@@ -197,7 +217,7 @@ export function postRoutes({ db, route, requireUser, sendMail }: Deps) {
     }
     await notify(db, task.created_by, {
       type: 'post_live', title: 'Your task is live ✅',
-      body: `"${task.title}" is now live for doers.`, refType: 'task', refId: task.id,
+      body: `"${task.title}" is now live for doers. If you spot a mistake you have one hour to edit it.`, refType: 'task', refId: task.id,
     });
     await emailUser(db, sendMail, task.created_by, 'Your Kredilo task is live ✅',
       `Your payment was confirmed and "${task.title}" is now live for doers.\n\nTrack completions from "My posted tasks" on Kredilo.`);

@@ -165,6 +165,32 @@ export function taskRoutes({ db, route, requireUser, sendMail }: Deps) {
     return { task: publicTask((await getTask(id))!) };
   });
 
+  // Admins (any admin role except plain users) can edit an existing task. Separate from the
+  // one-hour window that applies to a regular user editing their own posted task.
+  route('POST', '/api/admin/tasks/update', async (c) => {
+    const admin = await requireAdmin(c);
+    const task = await getTask(str(c.body.taskId, 64));
+    if (!task) throw new HttpError(404, 'Task not found.');
+    const title = str(c.body.title, 120);
+    const description = str(c.body.description, 2000);
+    const category = CATEGORIES.includes(str(c.body.category, 40)) ? str(c.body.category, 40) : task.category;
+    const reward = int(c.body.reward);
+    const proofType = PROOF_TYPES.includes(str(c.body.proofType, 20)) ? str(c.body.proofType, 20) : task.proof_type;
+    const maxCompletions = int(c.body.maxCompletions);
+    if (!title || !description) throw new HttpError(400, 'Title and description are required.');
+    if (!Number.isInteger(reward) || reward <= 0) throw new HttpError(400, 'Reward must be a positive number of tokens.');
+    if (!Number.isInteger(maxCompletions) || maxCompletions <= 0) throw new HttpError(400, 'Set how many people can complete it.');
+    if (maxCompletions < task.approved_count) throw new HttpError(400, `At least ${task.approved_count} people have already completed this, so the limit cannot be lower.`);
+    const needsHandle = c.body.needsHandle ? 1 : 0;
+    const link = cleanLink(c.body.link);
+    const photo = c.body.photo ? (await saveImage(c.body.photo)).file : task.photo_file;
+    await db
+      .prepare('UPDATE tasks SET title = ?, description = ?, category = ?, reward_tokens = ?, proof_type = ?, needs_handle = ?, max_completions = ?, link_url = ?, photo_file = ? WHERE id = ?')
+      .run(title, description, category, reward, proofType, needsHandle, maxCompletions, link, photo, task.id);
+    await audit(db, admin.id, 'task.update', task.id, { reward, maxCompletions });
+    return { task: publicTask((await getTask(task.id))!) };
+  });
+
   route('POST', '/api/admin/tasks/close', async (c) => {
     const admin = await requireAdmin(c);
     const task = await getTask(str(c.body.taskId, 64));
@@ -301,7 +327,8 @@ export function taskRoutes({ db, route, requireUser, sendMail }: Deps) {
       u.role !== 'user' ||
       (await db.prepare('SELECT 1 FROM submissions WHERE proof_file = ? AND user_id = ?').get(file, u.id)) ||
       (await db.prepare("SELECT 1 FROM tasks WHERE created_by = ? AND (photo_file = ? OR id IN (SELECT task_id FROM submissions WHERE proof_file = ?))").get(u.id, file, file)) ||
-      (await db.prepare("SELECT 1 FROM tasks WHERE photo_file = ? AND status = 'live'").get(file));
+      (await db.prepare("SELECT 1 FROM tasks WHERE photo_file = ? AND status = 'live'").get(file)) ||
+      (await db.prepare('SELECT 1 FROM notifications WHERE image_file = ? AND user_id = ?').get(file, u.id));
     if (!allowed) throw new HttpError(403, 'Not allowed.');
     const img = await readPrivateImage(file);
     if (!img) throw new HttpError(404, 'File not found.');

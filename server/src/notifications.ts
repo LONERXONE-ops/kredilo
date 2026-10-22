@@ -11,7 +11,7 @@ type Deps = {
 
 type NRow = {
   id: string; user_id: string; type: string; title: string; body: string | null;
-  ref_type: string | null; ref_id: string | null; read_at: string | null; created_at: string;
+  ref_type: string | null; ref_id: string | null; image_file: string | null; read_at: string | null; created_at: string;
 };
 
 // Write a notification for a user. Never throws — a failed notification must not break the
@@ -47,7 +47,7 @@ export async function emailUser(db: Queryable, sendMail: SendMail | undefined, u
 }
 
 const view = (n: NRow) => ({
-  id: n.id, type: n.type, title: n.title, body: n.body,
+  id: n.id, type: n.type, title: n.title, body: n.body, image: n.image_file,
   refType: n.ref_type, refId: n.ref_id, read: !!n.read_at, createdAt: n.created_at,
 });
 

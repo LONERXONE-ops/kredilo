@@ -41,7 +41,7 @@ function ReferralCard() {
   return (
     <div className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-500/[0.12] to-transparent p-6">
       <div className="flex items-center gap-2 text-sm font-bold text-emerald-300"><Gift size={18} /> Invite friends, earn {info.bonus} <Kred size={14} /></div>
-      <p className="mt-1 text-sm text-white/55">You get {info.bonus} kreds each time someone you invite completes their first task.</p>
+      <p className="mt-1 text-sm text-white/55">You get {info.bonus} kreds automatically each time someone you invite completes their first task. Look out for the Invite a Friend task too for an extra reward.</p>
 
       <div className="mt-4 rounded-2xl border border-white/10 bg-black/40 p-4">
         <div className="text-xs font-semibold text-white/45">Your referral code</div>

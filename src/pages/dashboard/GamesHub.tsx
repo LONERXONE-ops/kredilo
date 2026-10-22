@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Flame, Gamepad2, LayoutGrid, ListChecks, Loader2, MousePointerClick } from 'lucide-react';
+import { ArrowRight, Calculator, Check, Flame, Gamepad2, LayoutGrid, ListChecks, Loader2, MousePointerClick, Palette, Target } from 'lucide-react';
 import { getGamesStatus } from '../../lib/games';
 import { claimStreak, getStreak } from '../../lib/streak';
 import type { StreakStatus } from '../../lib/streak';
@@ -12,6 +12,9 @@ const games = [
   { key: 'memory', icon: LayoutGrid, name: 'Memory Match', path: '/games/memory', max: 50, desc: 'Find matching pairs and complete the grid.', tile: 'from-violet-500/25 to-violet-500/[0.04]', fg: 'text-violet-300' },
   { key: 'reaction', icon: MousePointerClick, name: 'Reaction Test', path: '/games/reaction', max: 30, desc: 'Tap as fast as you can when the signal appears.', tile: 'from-amber-500/25 to-amber-500/[0.04]', fg: 'text-amber-300' },
   { key: 'trivia', icon: ListChecks, name: 'Trivia Quiz', path: '/games/trivia', max: 40, desc: 'Answer questions and test your knowledge.', tile: 'from-sky-500/25 to-sky-500/[0.04]', fg: 'text-sky-300' },
+  { key: 'stroop', icon: Palette, name: 'Color Match', path: '/games/color', max: 40, desc: 'Does the word match its colour? Beat the clock.', tile: 'from-rose-500/25 to-rose-500/[0.04]', fg: 'text-rose-300' },
+  { key: 'math', icon: Calculator, name: 'Math Sprint', path: '/games/math', max: 40, desc: 'Solve as many problems as you can in 30 seconds.', tile: 'from-indigo-500/25 to-indigo-500/[0.04]', fg: 'text-indigo-300' },
+  { key: 'tiles', icon: Target, name: 'Tap Tiles', path: '/games/tiles', max: 30, desc: 'Tap the emerald tile as fast as you can.', tile: 'from-teal-500/25 to-teal-500/[0.04]', fg: 'text-teal-300' },
 ];
 
 // Which day of the current 7-day cycle the streak is on (0 when the streak is broken).

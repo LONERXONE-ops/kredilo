@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, CheckCheck, ChevronRight } from 'lucide-react';
+import { Bell, CheckCheck, ChevronRight, X } from 'lucide-react';
 import { listNotifications, markRead, notificationHref, timeAgo } from '../../lib/notifications';
 import type { Notification } from '../../lib/notifications';
 import { EmptyState } from '../../components/EmptyState';
@@ -8,6 +8,7 @@ import { EmptyState } from '../../components/EmptyState';
 export default function Notifications() {
   const [items, setItems] = useState<Notification[] | null>(null);
   const [error, setError] = useState('');
+  const [selected, setSelected] = useState<Notification | null>(null);
 
   const load = () => listNotifications().then((r) => setItems(r.notifications)).catch((e) => setError(e instanceof Error ? e.message : 'Could not load notifications.'));
   useEffect(() => {
@@ -19,6 +20,18 @@ export default function Notifications() {
   const markAll = async () => {
     try { await markRead(); setItems((prev) => prev?.map((n) => ({ ...n, read: true })) ?? prev); window.dispatchEvent(new Event('notifications-read')); } catch { /* ignore */ }
   };
+
+  const openDetail = (n: Notification) => {
+    setSelected(n);
+    if (!n.read) { setItems((prev) => prev?.map((x) => (x.id === n.id ? { ...x, read: true } : x)) ?? prev); markRead(n.id).catch(() => { /* ignore */ }); }
+  };
+
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelected(null); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [selected]);
 
   const hasUnread = items?.some((n) => !n.read);
 
@@ -56,19 +69,31 @@ export default function Notifications() {
 
       <div className="space-y-3">
         {items?.map((n) => {
-          const href = notificationHref(n);
-          const base = `flex items-start gap-3 rounded-3xl border p-4 ${n.read ? 'border-white/10 bg-[#0e0e0e]' : 'border-white/20 bg-white/[0.04]'}`;
-          return href ? (
-            <Link key={n.id} to={href} className={`pressable ${base} transition hover:border-white/30 hover:bg-white/[0.07]`}>
+          const base = `flex w-full items-start gap-3 rounded-3xl border p-4 text-left ${n.read ? 'border-white/10 bg-[#0e0e0e]' : 'border-white/20 bg-white/[0.04]'}`;
+          return (
+            <button key={n.id} onClick={() => openDetail(n)} className={`pressable ${base} transition hover:border-white/30 hover:bg-white/[0.07]`}>
               <Inner n={n} tappable />
-            </Link>
-          ) : (
-            <div key={n.id} className={base}>
-              <Inner n={n} tappable={false} />
-            </div>
+            </button>
           );
         })}
       </div>
+
+      {selected && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-4 backdrop-blur-sm animate-[fadein_160ms_ease-out] sm:items-center" onClick={() => setSelected(null)}>
+          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-[#0e0e0e] p-6 shadow-2xl animate-[popin_240ms_ease-out]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-xl font-extrabold leading-snug">{selected.title}</h2>
+              <button onClick={() => setSelected(null)} aria-label="Close" className="pressable flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 text-white/60 hover:bg-white/10"><X size={18} /></button>
+            </div>
+            <div className="mt-1 text-xs text-white/40">{timeAgo(selected.createdAt)}</div>
+            {selected.image && <img src={`/api/uploads?file=${encodeURIComponent(selected.image)}`} alt="" className="mt-4 w-full rounded-2xl object-cover" />}
+            {selected.body && <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-white/75">{selected.body}</p>}
+            {notificationHref(selected) && (
+              <Link to={notificationHref(selected)!} onClick={() => setSelected(null)} className="pressable mt-5 flex min-h-12 items-center justify-center gap-2 rounded-full bg-white text-sm font-bold text-black hover:bg-white/90">View details <ChevronRight size={16} /></Link>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

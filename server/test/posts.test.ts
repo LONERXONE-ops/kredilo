@@ -114,3 +114,21 @@ test('only the poster can see their doers; others are blocked', async () => {
   assert.equal((await t.call('GET', `/api/post/doers?taskId=${id}`, undefined, poster)).status, 200);
   t.close();
 });
+
+test('poster can edit their task within an hour of going live, not after; only the owner', async () => {
+  const t = await setup();
+  const owner = await t.makeUser(OWNER);
+  const poster = await t.makeUser('poster-edit@example.com');
+  const made = await makePost(t, poster, { title: 'First title' });
+  const id = made.json.id;
+  assert.equal((await t.call('POST', '/api/admin/posts/confirm', { taskId: id, note: 'paid' }, owner)).status, 200);
+  const ok = await t.call('POST', '/api/post/edit', { taskId: id, title: 'Fixed title', description: 'Fixed description' }, poster);
+  assert.equal(ok.status, 200);
+  const mine = await t.call('GET', '/api/post/mine', undefined, poster);
+  assert.equal(mine.json.tasks[0].title, 'Fixed title');
+  const other = await t.makeUser('other-edit@example.com');
+  assert.equal((await t.call('POST', '/api/post/edit', { taskId: id, title: 'X', description: 'Y' }, other)).status, 404);
+  await t.db.prepare('UPDATE tasks SET went_live_at = ? WHERE id = ?').run(new Date(Date.now() - 2 * 3600_000).toISOString(), id);
+  assert.equal((await t.call('POST', '/api/post/edit', { taskId: id, title: 'Too late', description: 'Too late' }, poster)).status, 403);
+  t.close();
+});

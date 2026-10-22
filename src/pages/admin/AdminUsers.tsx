@@ -6,6 +6,15 @@ import type { AdminUser } from '../../lib/adminData';
 import { useAuth } from '../../lib/auth';
 import { Avatar } from '../../components/Avatar';
 
+// Activity colour: emerald = seen in the last 5 minutes, amber = within the hour, red = older or never.
+function activity(lastSeen: string | null): { color: string; label: string } {
+  if (!lastSeen) return { color: 'bg-red-500', label: 'inactive' };
+  const mins = (Date.now() - new Date(lastSeen).getTime()) / 60000;
+  if (mins < 5) return { color: 'bg-emerald-400', label: 'active now' };
+  if (mins < 60) return { color: 'bg-amber-400', label: 'recently active' };
+  return { color: 'bg-red-500', label: 'inactive' };
+}
+
 export default function AdminUsers() {
   const { user } = useAuth();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
@@ -36,7 +45,10 @@ export default function AdminUsers() {
         {users?.map((u) => (
           <div key={u.id} className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/10 bg-[#0e0e0e] p-4">
             <div className="flex min-w-0 items-center gap-3">
-              <Avatar src={u.avatar} name={u.email} size={40} />
+              <span className="relative shrink-0">
+                <Avatar src={u.avatar} name={u.email} size={40} />
+                <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0e0e0e] ${activity(u.lastSeen).color}`} title={activity(u.lastSeen).label} />
+              </span>
               <div className="min-w-0">
               <div className="truncate font-bold">{u.email}</div>
               <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-white/45">
@@ -44,6 +56,7 @@ export default function AdminUsers() {
                 <span>· {u.balance.toLocaleString()} kreds</span>
                 {u.emailVerified ? <span className="text-emerald-400">· verified</span> : <span className="text-amber-300">· unverified</span>}
                 {u.status === 'suspended' && <span className="text-red-400">· suspended</span>}
+                <span>· {activity(u.lastSeen).label}</span>
               </div>
               </div>
             </div>

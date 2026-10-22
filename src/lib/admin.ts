@@ -14,6 +14,11 @@ export const createTask = (body: {
   maxCompletions: number; photo?: string; link?: string;
 }) => apiRequest<{ task: AdminTask }>('/api/admin/tasks', body);
 
+export const updateTask = (taskId: string, body: {
+  title: string; description: string; category: string; reward: number; proofType: string; needsHandle: boolean;
+  maxCompletions: number; photo?: string; link?: string;
+}) => apiRequest<{ task: AdminTask }>('/api/admin/tasks/update', { taskId, ...body });
+
 export const listPendingSubmissions = () => apiRequest<{ submissions: PendingSubmission[] }>('/api/admin/submissions').then((r) => r.submissions);
 export const approveSubmission = (submissionId: string) => apiRequest('/api/admin/submissions/approve', { submissionId });
 export const rejectSubmission = (submissionId: string, reason: string) => apiRequest('/api/admin/submissions/reject', { submissionId, reason });

@@ -26,6 +26,9 @@ import SnakeGame from './pages/games/Snake';
 import MemoryMatch from './pages/games/MemoryMatch';
 import ReactionTest from './pages/games/ReactionTest';
 import TriviaQuiz from './pages/games/TriviaQuiz';
+import ColorMatch from './pages/games/ColorMatch';
+import MathSprint from './pages/games/MathSprint';
+import TapTiles from './pages/games/TapTiles';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Terms from './pages/Terms';
@@ -90,6 +93,9 @@ function App() {
           <Route path="/games/memory" element={<MemoryMatch />} />
           <Route path="/games/reaction" element={<ReactionTest />} />
           <Route path="/games/trivia" element={<TriviaQuiz />} />
+          <Route path="/games/color" element={<ColorMatch />} />
+          <Route path="/games/math" element={<MathSprint />} />
+          <Route path="/games/tiles" element={<TapTiles />} />
         </Route>
 
         {/* Admin */}

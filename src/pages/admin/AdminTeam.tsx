@@ -117,9 +117,12 @@ export default function AdminTeam() {
         <div className="mt-3 divide-y divide-white/5">
           {team?.members.map((m) => (
             <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-              <div className="min-w-0">
-                <div className="truncate font-bold">{m.email}</div>
-                <div className="text-xs text-white/45">{m.role === 'owner' ? 'Owner' : m.role === 'reviewer' ? 'Reviewer' : 'Support'}</div>
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-sm font-extrabold text-emerald-300">{m.email[0]?.toUpperCase() ?? '?'}</span>
+                <div className="min-w-0">
+                  <div className="truncate font-bold">{m.email}</div>
+                  <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ${m.role === 'owner' ? 'bg-emerald-500/15 text-emerald-300' : m.role === 'reviewer' ? 'bg-sky-500/15 text-sky-300' : 'bg-white/10 text-white/60'}`}>{m.role === 'owner' ? 'Owner' : m.role === 'reviewer' ? 'Reviewer' : 'Support'}</span>
+                </div>
               </div>
               {m.role !== 'owner' && (
                 <div className="flex items-center gap-2">

@@ -4,8 +4,8 @@ import type { UserRow } from './auth.ts';
 import { HttpError } from './http.ts';
 import type { Ctx } from './http.ts';
 import { addFunding, balance, currentSettings, reserveAvailable, tokensToNaira } from './ledger.ts';
-import { avatarUrl } from './uploads.ts';
-import { deleteUserSessions } from './auth.ts';
+import { avatarUrl, saveImage } from './uploads.ts';
+import { deleteUserSessions, newId } from './auth.ts';
 
 type Deps = {
   db: Db;
@@ -32,6 +32,9 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
     await requireAdmin(c);
     const { rate, minWithdrawalTokens } = await currentSettings(db);
     const reserve = await reserveAvailable(db);
+    const nowMs = Date.now();
+    const activeCut = new Date(nowMs - 5 * 60_000).toISOString();   // seen in the last 5 minutes
+    const recentCut = new Date(nowMs - 60 * 60_000).toISOString();  // seen in the last hour
     return {
       users: await one(db, "SELECT COUNT(*) AS n FROM users WHERE role = 'user'"),
       admins: await one(db, "SELECT COUNT(*) AS n FROM users WHERE role != 'user'"),
@@ -39,6 +42,8 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
       pendingReviews: await one(db, "SELECT COUNT(*) AS n FROM submissions WHERE status = 'pending_review'"),
       pendingPosts: await one(db, "SELECT COUNT(*) AS n FROM tasks WHERE kind = 'posted' AND status = 'pending_payment'"),
       openWithdrawals: await one(db, "SELECT COUNT(*) AS n FROM withdrawals WHERE status IN ('requested','processing')"),
+      usersActive: await one(db, "SELECT COUNT(*) AS n FROM users WHERE role = 'user' AND last_seen_at > ?", activeCut),
+      usersRecent: await one(db, "SELECT COUNT(*) AS n FROM users WHERE role = 'user' AND last_seen_at > ? AND last_seen_at <= ?", recentCut, activeCut),
       reserveTokens: reserve,
       reserveNaira: tokensToNaira(reserve, rate),
       // Warn the owner while there's still a buffer, before rewards start failing.
@@ -51,13 +56,13 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
     if (u.role === 'reviewer') throw new HttpError(403, 'Not allowed.');
     const q = str(c.query.q, 80).toLowerCase();
     const rows = (await db
-      .prepare(`SELECT id, email, role, status, email_verified_at, created_at, avatar_ref FROM users ${q ? 'WHERE LOWER(email) LIKE ?' : ''} ORDER BY created_at DESC LIMIT 200`)
-      .all(...(q ? [`%${q}%`] : []))) as { id: string; email: string; role: string; status: string; email_verified_at: string | null; created_at: string; avatar_ref: string | null }[];
+      .prepare(`SELECT id, email, role, status, email_verified_at, created_at, avatar_ref, last_seen_at FROM users ${q ? 'WHERE LOWER(email) LIKE ?' : ''} ORDER BY created_at DESC LIMIT 200`)
+      .all(...(q ? [`%${q}%`] : []))) as { id: string; email: string; role: string; status: string; email_verified_at: string | null; created_at: string; avatar_ref: string | null; last_seen_at: string | null }[];
     return {
       users: await Promise.all(
         rows.map(async (r) => ({
           id: r.id, email: r.email, role: r.role, status: r.status,
-          emailVerified: r.email_verified_at !== null, balance: await balance(db, r.id), createdAt: r.created_at, avatar: avatarUrl(r.avatar_ref),
+          emailVerified: r.email_verified_at !== null, balance: await balance(db, r.id), createdAt: r.created_at, avatar: avatarUrl(r.avatar_ref), lastSeen: r.last_seen_at,
         })),
       ),
     };
@@ -76,17 +81,47 @@ export function adminDataRoutes({ db, route, requireUser }: Deps) {
     return { ok: true };
   });
 
-  // Broadcast one notification to every user at once.
+  // Broadcast one notification to every user at once, and keep a record in the announcements
+  // history so it can be reviewed and edited later.
   route('POST', '/api/admin/announce', async (c) => {
     const admin = await requireOwner(c);
     const title = str(c.body.title, 120);
     const body = str(c.body.body, 1000);
     if (!title) throw new HttpError(400, 'Enter an announcement title.');
+    const image = c.body.image ? (await saveImage(c.body.image)).file : null;
+    const annId = newId();
     const res = await db
-      .prepare("INSERT INTO notifications (id, user_id, type, title, body) SELECT lower(hex(randomblob(16))), id, 'announcement', ?, ? FROM users")
-      .run(title, body || null);
-    await audit(db, admin.id, 'announce', null, { title, sent: res.changes });
+      .prepare("INSERT INTO notifications (id, user_id, type, title, body, ref_type, ref_id, image_file) SELECT lower(hex(randomblob(16))), id, 'announcement', ?, ?, 'announcement', ?, ? FROM users")
+      .run(title, body || null, annId, image);
+    await db.prepare('INSERT INTO announcements (id, title, body, image_file, sent_by, sent_count) VALUES (?, ?, ?, ?, ?, ?)').run(annId, title, body || null, image, admin.id, res.changes);
+    await audit(db, admin.id, 'announce', annId, { title, sent: res.changes });
     return { ok: true, sent: res.changes };
+  });
+
+  // History of past announcements, newest first.
+  route('GET', '/api/admin/announcements', async (c) => {
+    await requireOwner(c);
+    const rows = (await db
+      .prepare(`SELECT a.id, a.title, a.body, a.image_file, a.sent_count, a.created_at, a.updated_at, u.email AS sender
+                FROM announcements a LEFT JOIN users u ON u.id = a.sent_by ORDER BY a.created_at DESC LIMIT 100`)
+      .all()) as { id: string; title: string; body: string | null; image_file: string | null; sent_count: number; created_at: string; updated_at: string | null; sender: string | null }[];
+    return { announcements: rows.map((r) => ({ id: r.id, title: r.title, body: r.body, image: r.image_file, sentCount: r.sent_count, createdAt: r.created_at, updatedAt: r.updated_at, sender: r.sender })) };
+  });
+
+  // Edit a past announcement to fix a typo; the change also updates what users already received.
+  route('POST', '/api/admin/announcements/update', async (c) => {
+    const admin = await requireOwner(c);
+    const id = str(c.body.id, 64);
+    const title = str(c.body.title, 120);
+    const body = str(c.body.body, 1000);
+    if (!title) throw new HttpError(400, 'Enter an announcement title.');
+    const ann = await db.prepare('SELECT id FROM announcements WHERE id = ?').get(id);
+    if (!ann) throw new HttpError(404, 'Announcement not found.');
+    const now = new Date().toISOString();
+    await db.prepare('UPDATE announcements SET title = ?, body = ?, updated_at = ? WHERE id = ?').run(title, body || null, now, id);
+    await db.prepare("UPDATE notifications SET title = ?, body = ? WHERE ref_type = 'announcement' AND ref_id = ?").run(title, body || null, id);
+    await audit(db, admin.id, 'announce.edit', id, { title });
+    return { ok: true };
   });
 
   route('GET', '/api/admin/funding', async (c) => {

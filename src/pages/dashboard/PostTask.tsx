@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CalendarClock, Check, ClipboardList, Copy, ImageUp, Link2, Loader2, Receipt, Users } from 'lucide-react';
 import { SectionHeader } from '../../components/SectionHeader';
-import { createPost, getPostPricing, listMyPosts, getPostDoers, postStatusLabel } from '../../lib/posts';
+import { createPost, getPostPricing, listMyPosts, getPostDoers, editPost, postStatusLabel } from '../../lib/posts';
 import type { Doer, PostedTask, PostPricing } from '../../lib/posts';
 import { fileToDataUrl } from '../../lib/tasks';
 import { Tabs } from '../../components/Tabs';
@@ -155,10 +155,39 @@ function DoerList({ taskId }: { taskId: string }) {
   );
 }
 
+function PostEditor({ post, onDone }: { post: PostedTask; onDone: () => void }) {
+  const [title, setTitle] = useState(post.title);
+  const [description, setDescription] = useState(post.description);
+  const [link, setLink] = useState(post.link ?? '');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const save = async () => {
+    setBusy(true); setErr('');
+    try { await editPost({ taskId: post.id, title: title.trim(), description: description.trim(), link: link || undefined }); onDone(); }
+    catch (e) { setErr(e instanceof Error ? e.message : 'Could not save your changes.'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/30 p-3">
+      <p className="text-xs text-white/50">Spotted a mistake? You can fix the wording for a short while after your task goes live.</p>
+      <input value={title} onChange={(e) => setTitle(e.target.value)} className="h-10 w-full rounded-xl border border-white/15 bg-black/40 px-3 text-sm outline-none focus:border-white/40" />
+      <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-white/40" />
+      <input value={link} onChange={(e) => setLink(e.target.value)} inputMode="url" placeholder="https:// (optional)" className="h-10 w-full rounded-xl border border-white/15 bg-black/40 px-3 text-sm outline-none focus:border-white/40" />
+      {err && <p className="text-xs text-red-400">{err}</p>}
+      <div className="flex gap-2">
+        <button onClick={save} disabled={busy} className="rounded-full bg-white px-4 py-1.5 text-xs font-bold text-black disabled:opacity-50">{busy ? 'Saving...' : 'Save changes'}</button>
+        <button onClick={onDone} className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-bold">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 function MyPosts() {
   const [posts, setPosts] = useState<PostedTask[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
-  useEffect(() => { listMyPosts().then(setPosts).catch(() => setPosts([])); }, []);
+  const [editing, setEditing] = useState<string | null>(null);
+  const reload = () => listMyPosts().then(setPosts).catch(() => setPosts([]));
+  useEffect(() => { reload(); }, []);
   if (!posts) return <div className="space-y-3">{[0, 1].map((i) => <div key={i} className="skeleton h-24 rounded-3xl" />)}</div>;
   if (posts.length === 0) return <p className="rounded-3xl border border-white/10 p-10 text-center text-sm text-white/45">You haven’t posted any tasks yet.</p>;
   return (
@@ -173,6 +202,9 @@ function MyPosts() {
             <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${p.status === 'live' ? 'bg-emerald-500/15 text-emerald-400' : p.status === 'rejected' ? 'bg-red-500/15 text-red-300' : 'bg-amber-400/15 text-amber-300'}`}>{postStatusLabel[p.status] ?? p.status}</span>
           </div>
           {p.paymentNote && p.status === 'rejected' && <p className="mt-2 text-sm text-red-400">Reason: {p.paymentNote}</p>}
+          {p.canEdit && (editing === p.id
+            ? <PostEditor post={p} onDone={() => { setEditing(null); reload(); }} />
+            : <button onClick={() => setEditing(p.id)} className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-emerald-300 underline underline-offset-4">Edit task</button>)}
           {p.status === 'live' && (
             <>
               <button onClick={() => setOpen(open === p.id ? null : p.id)} className="mt-3 text-sm font-bold underline underline-offset-4">{open === p.id ? 'Hide doers' : 'View doers & proof'}</button>

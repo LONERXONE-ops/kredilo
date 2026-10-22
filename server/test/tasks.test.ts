@@ -157,3 +157,18 @@ test('wallet route reflects credited rewards and the real rate', async () => {
   assert.equal(w.transactions[0].reason, 'task_reward');
   t.close();
 });
+
+test('an admin can edit an existing task; a normal user cannot', async () => {
+  const t = await setup();
+  const owner = await t.makeUser(OWNER);
+  const made = await adminTask(t, owner, { title: 'Old title', reward: 10, maxCompletions: 5 });
+  const id = made.json.task.id;
+  const upd = await t.call('POST', '/api/admin/tasks/update', { taskId: id, title: 'New title', description: 'New desc', category: 'Surveys', reward: 25, proofType: 'screenshot', maxCompletions: 8 }, owner);
+  assert.equal(upd.status, 200);
+  assert.equal(upd.json.task.title, 'New title');
+  assert.equal(upd.json.task.reward, 25);
+  assert.equal(upd.json.task.category, 'Surveys');
+  const member = await t.makeUser('m2@example.com');
+  assert.equal((await t.call('POST', '/api/admin/tasks/update', { taskId: id, title: 'Hack', description: 'x', reward: 1, maxCompletions: 1 }, member)).status, 403);
+  t.close();
+});

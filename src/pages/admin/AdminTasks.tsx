@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { ClipboardList, ImageUp, Link2, Plus, Settings2, Trash2 } from 'lucide-react';
+import { ClipboardList, ImageUp, Link2, Pencil, Plus, Settings2, Trash2 } from 'lucide-react';
 import { SectionHeader } from '../../components/SectionHeader';
-import { createTask, deleteTask } from '../../lib/admin';
+import { createTask, deleteTask, updateTask } from '../../lib/admin';
 import { fileToDataUrl, listTasks } from '../../lib/tasks';
 import type { Task } from '../../lib/tasks';
 import { Kred } from '../../components/Kred';
@@ -16,6 +16,7 @@ export default function AdminTasks() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -36,16 +37,27 @@ export default function AdminTasks() {
     try { setPhoto(await fileToDataUrl(f)); setError(''); } catch { setError('Could not read that image.'); }
   };
 
+  const resetForm = () => {
+    setTitle(''); setDescription(''); setCategory(CATEGORIES[0]); setReward('30'); setProofType('screenshot');
+    setNeedsHandle(false); setMaxCompletions('50'); setLink(''); setPhoto(''); setEditingId(null);
+  };
+  const startEdit = (t: Task) => {
+    setEditingId(t.id); setTitle(t.title); setDescription(t.description); setCategory(t.category);
+    setReward(String(t.reward)); setProofType(t.proofType); setNeedsHandle(t.needsHandle);
+    setMaxCompletions(String(t.maxCompletions)); setLink(t.link ?? ''); setPhoto(''); setError(''); setOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true); setError('');
+    const body = { title, description, category, reward: Number(reward), proofType, needsHandle, maxCompletions: Number(maxCompletions), link: link || undefined, photo: photo || undefined };
     try {
-      await createTask({ title, description, category, reward: Number(reward), proofType, needsHandle, maxCompletions: Number(maxCompletions), link: link || undefined, photo: photo || undefined });
-      setOpen(false);
-      setTitle(''); setDescription(''); setReward('30'); setMaxCompletions('50'); setLink(''); setPhoto('');
+      if (editingId) await updateTask(editingId, body);
+      else await createTask(body);
+      setOpen(false); resetForm();
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create the task.');
+      setError(err instanceof Error ? err.message : 'Could not save the task.');
     } finally { setBusy(false); }
   };
 
@@ -63,7 +75,7 @@ export default function AdminTasks() {
         title="Tasks"
         info="Create tasks and set their rewards. Rewards are funded from the reserve."
         right={
-          <button onClick={() => setOpen(!open)} className="pressable inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-black hover:bg-white/90">
+          <button onClick={() => { if (open) { setOpen(false); } else { resetForm(); setOpen(true); } }} className="pressable inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-black hover:bg-white/90">
             <Plus size={16} /> {open ? 'Close' : 'New task'}
           </button>
         }
@@ -72,6 +84,7 @@ export default function AdminTasks() {
       {open && (
         <form onSubmit={submit} className="animate-[popin_240ms_ease-out] space-y-4">
           {error && <p role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+          {editingId && <p className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-bold text-emerald-300">Editing an existing task</p>}
 
           <FormSection title="Task details" subtitle="What should the doer do?" icon={<ClipboardList size={18} />}>
             <Field label="Task title"><input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Follow our X account" className={inputCls} /></Field>
@@ -105,7 +118,7 @@ export default function AdminTasks() {
             </Field>
           </FormSection>
 
-          <button disabled={busy} className="pressable min-h-14 w-full rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-60">{busy ? 'Creating...' : 'Create & publish task'}</button>
+          <button disabled={busy} className="pressable min-h-14 w-full rounded-full bg-white text-sm font-bold text-black hover:bg-white/90 disabled:opacity-60">{busy ? 'Saving...' : editingId ? 'Save changes' : 'Create & publish task'}</button>
         </form>
       )}
 
@@ -120,6 +133,9 @@ export default function AdminTasks() {
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <div className="flex items-center gap-1.5 text-sm font-extrabold text-emerald-400"><Kred size={14} /> {t.reward}</div>
+                <button onClick={() => startEdit(t)} aria-label="Edit task" className="pressable flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/70 hover:bg-white/10">
+                  <Pencil size={15} />
+                </button>
                 <button onClick={() => remove(t)} disabled={removing === t.id} aria-label="Delete task" className="pressable flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-red-300 hover:bg-red-500/10 disabled:opacity-50">
                   <Trash2 size={15} />
                 </button>

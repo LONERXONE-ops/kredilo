@@ -2,7 +2,7 @@ import { apiRequest } from './auth';
 
 export type Notification = {
   id: string; type: string; title: string; body: string | null;
-  refType: string | null; refId: string | null; read: boolean; createdAt: string;
+  refType: string | null; refId: string | null; image: string | null; read: boolean; createdAt: string;
 };
 
 export const listNotifications = () => apiRequest<{ notifications: Notification[]; unread: number }>('/api/notifications');

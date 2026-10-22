@@ -2,9 +2,9 @@ import { apiRequest } from './auth';
 
 export type Overview = {
   users: number; admins: number; liveTasks: number; pendingReviews: number;
-  pendingPosts: number; openWithdrawals: number; reserveTokens: number; reserveNaira: number; reserveLow: boolean;
+  pendingPosts: number; openWithdrawals: number; usersActive: number; usersRecent: number; reserveTokens: number; reserveNaira: number; reserveLow: boolean;
 };
-export type AdminUser = { id: string; email: string; role: string; status: string; emailVerified: boolean; balance: number; createdAt: string; avatar: string | null };
+export type AdminUser = { id: string; email: string; role: string; status: string; emailVerified: boolean; balance: number; createdAt: string; avatar: string | null; lastSeen: string | null };
 export type Funding = {
   rate: { tokens: number; naira: number };
   fundedTokens: number; fundedNaira: number; issuedTokens: number; issuedNaira: number;
@@ -20,7 +20,10 @@ export const setUserStatus = (userId: string, suspend: boolean) => apiRequest('/
 export const getFunding = () => apiRequest<Funding>('/api/admin/funding');
 export const addFunding = (tokens: number) => apiRequest<{ availableTokens: number; availableNaira: number }>('/api/admin/funding', { tokens });
 export const setExchangeRate = (kreds: number, naira: number) => apiRequest<{ rate: { tokens: number; naira: number } }>('/api/admin/rate', { kreds, naira });
-export const sendAnnouncement = (title: string, body: string) => apiRequest<{ sent: number }>('/api/admin/announce', { title, body });
+export type Announcement = { id: string; title: string; body: string | null; image: string | null; sentCount: number; createdAt: string; updatedAt: string | null; sender: string | null };
+export const sendAnnouncement = (title: string, body: string, image?: string) => apiRequest<{ sent: number }>('/api/admin/announce', { title, body, image });
+export const getAnnouncements = () => apiRequest<{ announcements: Announcement[] }>('/api/admin/announcements').then((r) => r.announcements);
+export const updateAnnouncement = (id: string, title: string, body: string) => apiRequest('/api/admin/announcements/update', { id, title, body });
 export const getLedger = () => apiRequest<{ entries: LedgerEntry[] }>('/api/admin/ledger').then((r) => r.entries);
 export const getAudit = () => apiRequest<{ entries: AuditEntry[] }>('/api/admin/audit').then((r) => r.entries);
 export const getFraud = () => apiRequest<Fraud>('/api/admin/fraud');
