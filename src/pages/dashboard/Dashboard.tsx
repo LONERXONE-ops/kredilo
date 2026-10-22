@@ -65,9 +65,15 @@ function ExploreList() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
+  const [doneIds, setDoneIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     listTasks().then(setTasks).catch((e) => setError(e instanceof Error ? e.message : 'Could not load tasks.'));
+    // Tasks the user has submitted or finished sink to the bottom of every tab; ones they
+    // only started (in_progress) stay on top so they can still finish them.
+    listMySubmissions()
+      .then((subs) => setDoneIds(new Set(subs.filter((s) => s.status !== 'in_progress').map((s) => s.taskId))))
+      .catch(() => { /* ordering is best-effort */ });
   }, []);
 
   if (error) return <p className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-300">{error}</p>;
@@ -80,6 +86,8 @@ function ExploreList() {
 
   const categories = ['All', ...Array.from(new Set(tasks.map((t) => t.category)))];
   const filtered = tasks.filter((t) => (category === 'All' || t.category === category) && t.title.toLowerCase().includes(search.toLowerCase()));
+  // Stable sort keeps the newest-first order within each group; done tasks move last.
+  const ordered = [...filtered].sort((a, b) => Number(doneIds.has(a.id)) - Number(doneIds.has(b.id)));
 
   return (
     <div className="space-y-4">
@@ -113,7 +121,7 @@ function ExploreList() {
         )
       ) : (
         <div className="stagger grid gap-3 sm:grid-cols-2">
-          {filtered.map((t) => <TaskTile key={t.id} task={t} />)}
+          {ordered.map((t) => <TaskTile key={t.id} task={t} />)}
         </div>
       )}
     </div>

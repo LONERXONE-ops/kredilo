@@ -30,9 +30,19 @@ export function adminRoutes({ db, route, requireUser, options }: Deps) {
 
   route('GET', '/api/admin/team', async (c) => {
     await requireOwner(c);
-    const members = (await db.prepare("SELECT id, email, role, created_at FROM users WHERE role != 'user' ORDER BY created_at").all()) as {
+    const rawMembers = (await db.prepare("SELECT id, email, role, created_at FROM users WHERE role != 'user' ORDER BY created_at").all()) as {
       id: string; email: string; role: string; created_at: string;
     }[];
+    // Defensive de-duplication: collapse any accounts that share an email (case/space-insensitive)
+    // into a single row, so an admin can never appear twice. Keeps the highest-privilege row.
+    const roleRank = (r: string) => (r === 'owner' ? 3 : r === 'reviewer' ? 2 : 1);
+    const byEmail = new Map<string, (typeof rawMembers)[number]>();
+    for (const m of rawMembers) {
+      const key = m.email.trim().toLowerCase();
+      const kept = byEmail.get(key);
+      if (!kept || roleRank(m.role) > roleRank(kept.role)) byEmail.set(key, m);
+    }
+    const members = [...byEmail.values()];
     const invites = (await db
       .prepare('SELECT id, email, role, expires_at, created_at FROM admin_invites WHERE accepted_at IS NULL AND revoked_at IS NULL AND expires_at > ? ORDER BY created_at DESC')
       .all(new Date().toISOString())) as { id: string; email: string; role: string; expires_at: string; created_at: string }[];

@@ -161,3 +161,18 @@ test('an invitation can never make a second owner', async () => {
   assert.equal(((await t.db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'owner'").get()) as { n: number }).n, 1);
   t.close();
 });
+
+test('the team list collapses duplicate accounts that share an email', async () => {
+  const t = await setup();
+  const owner = await t.makeUser(OWNER);
+  // Two legacy rows for the same person, differing only by email case (SQLite UNIQUE is case-sensitive).
+  await t.db.prepare("INSERT INTO users (id, email, password_hash, role) VALUES ('dupe1', 'Helper@Example.com', 'x', 'support')").run();
+  await t.db.prepare("INSERT INTO users (id, email, password_hash, role) VALUES ('dupe2', 'helper@example.com', 'x', 'reviewer')").run();
+  const team = await t.call('GET', '/api/admin/team', undefined, owner);
+  assert.equal(team.status, 200);
+  const helpers = team.json.members.filter((m: { email: string }) => m.email.toLowerCase() === 'helper@example.com');
+  assert.equal(helpers.length, 1);
+  // Keeps the higher-privilege role (reviewer beats support).
+  assert.equal(helpers[0].role, 'reviewer');
+  t.close();
+});

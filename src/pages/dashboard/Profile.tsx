@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BadgeCheck, Bell, Camera, Check, ChevronRight, Copy, FileText, Gift, LifeBuoy, LogOut, Megaphone, MessageCircle, Pencil, ShieldCheck, Share2 } from 'lucide-react';
+import { BadgeCheck, Bell, Camera, Check, ChevronRight, Copy, FileText, Gift, LifeBuoy, LogOut, Megaphone, MessageCircle, Pencil, ShieldCheck, Share2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { apiRequest, changeUsername, removeAvatar, uploadAvatar, useAuth } from '../../lib/auth';
 import { Avatar } from '../../components/Avatar';
@@ -86,6 +86,16 @@ export default function Profile() {
   const [newName, setNewName] = useState('');
   const [nameErr, setNameErr] = useState('');
   const [savingName, setSavingName] = useState(false);
+  const [viewAvatar, setViewAvatar] = useState(false);
+
+  useEffect(() => {
+    if (!viewAvatar) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setViewAvatar(false); };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
+  }, [viewAvatar]);
 
   if (!user) return null;
 
@@ -119,7 +129,13 @@ export default function Profile() {
       <div className="rounded-3xl border border-white/10 bg-[#0e0e0e] p-6">
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
-            <Avatar src={user.avatar} name={user.username} size={64} />
+            {user.avatar ? (
+              <button type="button" onClick={() => setViewAvatar(true)} aria-label="View profile photo" className="pressable block rounded-full">
+                <Avatar src={user.avatar} name={user.username} size={64} />
+              </button>
+            ) : (
+              <Avatar src={user.avatar} name={user.username} size={64} />
+            )}
             <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => onAvatar(e.target.files?.[0])} />
             <button onClick={() => fileRef.current?.click()} disabled={avatarBusy} aria-label="Change photo" className="pressable absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black text-white disabled:opacity-50">
               <Camera size={14} />
@@ -203,6 +219,15 @@ export default function Profile() {
       >
         <LogOut size={18} /> Log out
       </button>
+
+      {viewAvatar && user.avatar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-6 animate-[fadein_160ms_ease-out]" onClick={() => setViewAvatar(false)}>
+          <button type="button" aria-label="Close" onClick={() => setViewAvatar(false)} className="pressable absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white hover:bg-white/10">
+            <X size={22} />
+          </button>
+          <img src={user.avatar} alt="Your profile photo" onClick={(e) => e.stopPropagation()} className="max-h-[85vh] max-w-full rounded-3xl object-contain animate-[popin_200ms_ease-out]" />
+        </div>
+      )}
     </div>
   );
 }

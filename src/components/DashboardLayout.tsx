@@ -95,7 +95,7 @@ export function DashboardLayout() {
       ) : (
         <>
           <VerifyEmailBanner />
-          <main className={`relative mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8 ${isDock ? 'pb-36' : 'pb-16'} animate-[fadeup_320ms_ease-out]`}>
+          <main className={`relative mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8 ${isDock ? 'pb-[calc(8.5rem+env(safe-area-inset-bottom))]' : 'pb-16'} animate-[fadeup_320ms_ease-out]`}>
             <Outlet />
           </main>
           {isDock && <BottomDock />}
