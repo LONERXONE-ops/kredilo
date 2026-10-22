@@ -10,7 +10,7 @@ export function SectionHeader({ title, info, right }: { title: string; info?: st
     <div>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h1 className="text-4xl font-extrabold">{title}</h1>
+          <h1 className="title-glow text-4xl font-extrabold">{title}</h1>
           {info && (
             <button
               type="button"

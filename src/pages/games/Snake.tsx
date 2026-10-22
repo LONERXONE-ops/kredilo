@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Gamepad2 } from 'lucide-react';
 import { GameShell } from '../../components/GameShell';
 import { GameResult } from '../../components/GameResult';
 
@@ -97,7 +97,7 @@ export default function SnakeGame() {
   );
 
   return (
-    <GameShell title="Snake" goal={`Eat food to grow. Reach a score of ${GOAL} to hit the goal.`}>
+    <GameShell title="Snake" goal={`Eat food to grow. Reach a score of ${GOAL} to hit the goal.`} icon={Gamepad2}>
       <div className="mb-3 flex items-center justify-between text-sm font-bold">
         <span>Score: {game.score}</span>
         <span className="text-white/50">Goal: {GOAL}</span>

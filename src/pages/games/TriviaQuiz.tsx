@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { ListChecks } from 'lucide-react';
 import { GameShell } from '../../components/GameShell';
 import { GameResult } from '../../components/GameResult';
 
@@ -88,7 +89,7 @@ export default function TriviaQuiz() {
 
   if (done) {
     return (
-      <GameShell title="Trivia Quiz" goal="Answer the questions to test your knowledge.">
+      <GameShell title="Trivia Quiz" goal="Answer the questions to test your knowledge." icon={ListChecks}>
         <div className="rounded-3xl border border-white/15 bg-white/[0.03] p-8 text-center">
           <div className="text-6xl font-extrabold">{score}/{questions.length}</div>
           <p className="mt-2 text-white/60">correct answers</p>
@@ -100,7 +101,7 @@ export default function TriviaQuiz() {
   }
 
   return (
-    <GameShell title="Trivia Quiz" goal="Answer the questions to test your knowledge.">
+    <GameShell title="Trivia Quiz" goal="Answer the questions to test your knowledge." icon={ListChecks}>
       <div className="mb-3 flex items-center justify-between text-sm font-bold">
         <span>Question {index + 1}/{questions.length}</span>
         <span className="text-white/50">Score: {score}</span>

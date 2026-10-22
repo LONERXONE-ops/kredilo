@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Target } from 'lucide-react';
 import { GameShell } from '../../components/GameShell';
 import { GameResult } from '../../components/GameResult';
 
@@ -33,7 +34,7 @@ export default function TapTiles() {
   };
 
   return (
-    <GameShell title="Tap Tiles" goal="Tap the emerald tile as fast as you can. You have 20 seconds.">
+    <GameShell title="Tap Tiles" goal="Tap the emerald tile as fast as you can. You have 20 seconds." icon={Target}>
       {state === 'idle' && (
         <button onClick={start} className="pressable flex h-64 w-full items-center justify-center rounded-3xl border border-white/15 bg-white/[0.04] text-2xl font-extrabold">Tap to start</button>
       )}

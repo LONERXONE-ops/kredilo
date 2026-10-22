@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { MousePointerClick } from 'lucide-react';
 import { GameShell } from '../../components/GameShell';
 import { GameResult } from '../../components/GameResult';
 
@@ -47,7 +48,7 @@ export default function ReactionTest() {
   };
 
   return (
-    <GameShell title="Reaction Test" goal="Wait for the screen to turn white, then tap as fast as you can.">
+    <GameShell title="Reaction Test" goal="Wait for the screen to turn white, then tap as fast as you can." icon={MousePointerClick}>
       <button
         onClick={press}
         className={`flex h-64 w-full items-center justify-center rounded-3xl border px-6 text-center text-2xl font-extrabold transition ${

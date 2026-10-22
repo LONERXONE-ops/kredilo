@@ -27,8 +27,9 @@ html, body, #root {
 }
 
 body {
-  background: 
+  background:
     radial-gradient(ellipse 80% 50% at 100% 0%, rgba(255,255,255,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(16,185,129,0.06) 0%, transparent 55%),
     #050505;
 }
 
@@ -53,6 +54,21 @@ body {
   background: linear-gradient(215deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.04) 30%, transparent 55%);
   -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+}
+
+/* Emerald brand glow — ties sections together with the Kredilo colour. */
+.emerald-beam {
+  background: linear-gradient(215deg, rgba(16,185,129,0.16) 0%, rgba(16,185,129,0.05) 32%, transparent 58%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+}
+/* Soft emerald halo behind big page titles. */
+.title-glow {
+  text-shadow: 0 0 26px rgba(16, 185, 129, 0.22);
+}
+/* Emerald ring + lift for the element that should feel "live" on a screen. */
+.glow-ring {
+  box-shadow: 0 0 0 1px rgba(16,185,129,0.22), 0 12px 40px -12px rgba(16,185,129,0.4);
 }
 
 /* ---- Motion system ---------------------------------------------------- */

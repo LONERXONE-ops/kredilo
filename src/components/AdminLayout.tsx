@@ -39,17 +39,18 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
-      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#050505]/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-40 overflow-hidden border-b border-emerald-400/15 bg-[#050505]/90 backdrop-blur-xl">
+        <div aria-hidden className="emerald-beam pointer-events-none absolute inset-x-0 top-0 h-24" />
+        <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <Logo className="h-6 w-auto text-white" />
-            <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-extrabold uppercase text-black">{user.role}</span>
+            <span className="rounded-full bg-emerald-400 px-2.5 py-0.5 text-[11px] font-extrabold uppercase text-black">{user.role}</span>
           </div>
           <Link to="/dashboard" className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-white/60 hover:text-white">
             <ArrowLeft size={16} /> Back to app
           </Link>
         </div>
-        <nav aria-label="Admin" className="mx-auto max-w-6xl overflow-x-auto px-4 pb-3 sm:px-6 lg:px-8">
+        <nav aria-label="Admin" className="relative mx-auto max-w-6xl overflow-x-auto px-4 pb-3 sm:px-6 lg:px-8">
           <div className="flex w-max gap-1.5">
             {adminNav.filter((n) => canSee(user.role, n.path)).map((n) => (
               <NavLink
@@ -58,7 +59,7 @@ export function AdminLayout() {
                 end={n.path === ''}
                 className={({ isActive }) =>
                   `inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-bold transition ${
-                    isActive ? 'border-white bg-white text-black' : 'border-white/15 text-white/65 hover:text-white'
+                    isActive ? 'border-emerald-400 bg-emerald-400 text-black shadow-[0_6px_22px_-8px_rgba(16,185,129,0.85)]' : 'border-white/15 text-white/65 hover:border-emerald-400/40 hover:text-white'
                   }`
                 }
               >

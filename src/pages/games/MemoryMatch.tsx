@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Cloud, Heart, Moon, Star, Sun, Zap } from 'lucide-react';
+import { Cloud, Heart, LayoutGrid, Moon, Star, Sun, Zap } from 'lucide-react';
 import { GameShell } from '../../components/GameShell';
 import { GameResult } from '../../components/GameResult';
 
@@ -48,7 +48,7 @@ export default function MemoryMatch() {
   const won = matched.length === deck.length;
 
   return (
-    <GameShell title="Memory Match" goal="Flip two cards at a time and find all the matching pairs.">
+    <GameShell title="Memory Match" goal="Flip two cards at a time and find all the matching pairs." icon={LayoutGrid}>
       <div className="mb-3 flex items-center justify-between text-sm font-bold">
         <span>Pairs: {matched.length / 2}/{icons.length}</span>
         <span className="text-white/50">Moves: {moves}</span>

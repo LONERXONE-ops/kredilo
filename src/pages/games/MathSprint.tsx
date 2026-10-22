@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Calculator } from 'lucide-react';
 import { GameShell } from '../../components/GameShell';
 import { GameResult } from '../../components/GameResult';
 
@@ -50,7 +51,7 @@ export default function MathSprint() {
   };
 
   return (
-    <GameShell title="Math Sprint" goal="Solve as many as you can in 30 seconds. Tap the correct answer.">
+    <GameShell title="Math Sprint" goal="Solve as many as you can in 30 seconds. Tap the correct answer." icon={Calculator}>
       {state === 'idle' && (
         <button onClick={start} className="pressable flex h-64 w-full items-center justify-center rounded-3xl border border-white/15 bg-white/[0.04] text-2xl font-extrabold">Tap to start</button>
       )}
