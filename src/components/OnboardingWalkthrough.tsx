@@ -30,6 +30,8 @@ export function OnboardingWalkthrough() {
   const close = () => {
     try { localStorage.setItem(KEY, '1'); } catch { /* storage unavailable */ }
     setOpen(false);
+    // let the "What's New" announcement know it can show now (new signups)
+    window.dispatchEvent(new Event('kredilo:onboarding-done'));
   };
 
   if (!open) return null;

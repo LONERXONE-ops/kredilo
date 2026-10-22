@@ -10,6 +10,7 @@ import { anySocialConfigured } from '../lib/socials';
 import { getFollowStatus } from '../lib/follow';
 import { FollowGate } from './FollowGate';
 import { OnboardingWalkthrough } from './OnboardingWalkthrough';
+import { WhatsNew } from './WhatsNew';
 import { VerifyEmailBanner } from './VerifyEmailBanner';
 
 // The four sections that live in the bottom dock. Any other screen shows a back button instead.
@@ -100,6 +101,7 @@ export function DashboardLayout() {
           </main>
           {isDock && <BottomDock />}
           {user.role === 'user' && <OnboardingWalkthrough />}
+          {user.role === 'user' && <WhatsNew />}
         </>
       )}
     </div>
