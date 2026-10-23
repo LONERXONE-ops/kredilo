@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, Gamepad2, ImageIcon, ListChecks, Search, Sparkles, Wallet as WalletIcon } from 'lucide-react';
+import { ArrowRight, Check, Gamepad2, ImageIcon, ListChecks, Search, Sparkles, Wallet as WalletIcon } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { getWallet, listMySubmissions, listTasks, statusLabel } from '../../lib/tasks';
 import type { MySubmission, Task, Wallet } from '../../lib/tasks';
@@ -20,11 +20,11 @@ const statusChip: Record<MySubmission['status'], string> = {
 const proofLabel = (t: Task) =>
   t.proofType === 'screenshot' ? 'Screenshot proof' : t.proofType === 'none' ? 'No proof needed' : t.proofType === 'link' ? 'Link proof' : 'Proof required';
 
-function TaskTile({ task }: { task: Task }) {
+function TaskTile({ task, status }: { task: Task; status?: MySubmission['status'] }) {
   return (
     <Link
       to={`/dashboard/tasks/${task.id}`}
-      className="pressable group block overflow-hidden rounded-3xl border border-white/10 bg-[#0e0e0e] transition hover:border-white/25"
+      className={`pressable group block overflow-hidden rounded-3xl border border-white/10 bg-[#0e0e0e] transition hover:border-white/25 ${status === 'approved' ? 'opacity-80' : ''}`}
     >
       {/* Image-forward banner, like the games cards — shown upfront so doers see it without opening */}
       <div className="relative aspect-[16/7] w-full overflow-hidden bg-gradient-to-br from-white/[0.07] to-transparent">
@@ -43,6 +43,12 @@ function TaskTile({ task }: { task: Task }) {
           <span className="rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">{task.category}</span>
           <span className="rounded-full bg-emerald-500/80 px-2.5 py-1 text-[11px] font-bold text-black backdrop-blur">{task.remaining} left</span>
         </div>
+        {status === 'approved' && (
+          <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-emerald-500/90 px-2.5 py-1 text-[11px] font-bold text-black backdrop-blur"><Check size={12} /> Task done</span>
+        )}
+        {status === 'pending_review' && (
+          <span className="absolute right-3 top-3 rounded-full bg-amber-400/90 px-2.5 py-1 text-[11px] font-bold text-black backdrop-blur">Pending review</span>
+        )}
       </div>
       <div className="flex items-center justify-between gap-3 p-4 sm:p-5">
         <div className="min-w-0">
@@ -65,15 +71,16 @@ function ExploreList() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
-  const [doneIds, setDoneIds] = useState<Set<string>>(new Set());
+  const [myStatus, setMyStatus] = useState<Record<string, MySubmission['status']>>({});
 
   useEffect(() => {
     listTasks().then(setTasks).catch((e) => setError(e instanceof Error ? e.message : 'Could not load tasks.'));
     // Tasks the user has submitted or finished sink to the bottom of every tab; ones they
-    // only started (in_progress) stay on top so they can still finish them.
+    // only started (in_progress) stay on top so they can still finish them. The status also
+    // drives the "Task done" / "Pending review" tag on each tile.
     listMySubmissions()
-      .then((subs) => setDoneIds(new Set(subs.filter((s) => s.status !== 'in_progress').map((s) => s.taskId))))
-      .catch(() => { /* ordering is best-effort */ });
+      .then((subs) => setMyStatus(Object.fromEntries(subs.map((s) => [s.taskId, s.status]))))
+      .catch(() => { /* ordering + tags are best-effort */ });
   }, []);
 
   if (error) return <p className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-300">{error}</p>;
@@ -86,8 +93,10 @@ function ExploreList() {
 
   const categories = ['All', ...Array.from(new Set(tasks.map((t) => t.category)))];
   const filtered = tasks.filter((t) => (category === 'All' || t.category === category) && t.title.toLowerCase().includes(search.toLowerCase()));
+  // A task counts as "done" (sinks to the bottom) once it has any submission that isn't still in progress.
+  const isDone = (id: string) => myStatus[id] !== undefined && myStatus[id] !== 'in_progress';
   // Stable sort keeps the newest-first order within each group; done tasks move last.
-  const ordered = [...filtered].sort((a, b) => Number(doneIds.has(a.id)) - Number(doneIds.has(b.id)));
+  const ordered = [...filtered].sort((a, b) => Number(isDone(a.id)) - Number(isDone(b.id)));
 
   return (
     <div className="space-y-4">
@@ -121,7 +130,7 @@ function ExploreList() {
         )
       ) : (
         <div className="stagger grid gap-3 sm:grid-cols-2">
-          {ordered.map((t) => <TaskTile key={t.id} task={t} />)}
+          {ordered.map((t) => <TaskTile key={t.id} task={t} status={myStatus[t.id]} />)}
         </div>
       )}
     </div>

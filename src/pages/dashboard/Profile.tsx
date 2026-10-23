@@ -81,6 +81,7 @@ export default function Profile() {
   const fileRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarErr, setAvatarErr] = useState('');
   const [note, setNote] = useState('');
   const [editing, setEditing] = useState(false);
   const [newName, setNewName] = useState('');
@@ -101,8 +102,9 @@ export default function Profile() {
 
   const onAvatar = async (file: File | undefined) => {
     if (!file) return;
-    setAvatarBusy(true);
-    try { await uploadAvatar(await fileToDataUrl(file, 512)); await refresh(); } catch { /* ignore */ }
+    setAvatarBusy(true); setAvatarErr('');
+    try { await uploadAvatar(await fileToDataUrl(file, 512)); await refresh(); }
+    catch (e) { setAvatarErr(e instanceof Error ? e.message : 'Could not upload that photo. Please try a JPG or PNG under 5 MB.'); }
     finally { setAvatarBusy(false); }
   };
   const clearAvatar = async () => { setAvatarBusy(true); try { await removeAvatar(); await refresh(); } finally { setAvatarBusy(false); } };
@@ -165,6 +167,7 @@ export default function Profile() {
             </div>
           </div>
         </div>
+        {avatarErr && <p className="mt-3 text-xs text-red-400">{avatarErr}</p>}
 
         {/* Verification notice ONLY while unverified */}
         {!user.emailVerified && (
